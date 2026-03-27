@@ -401,15 +401,8 @@ select.num-inp{width:auto;font-size:.72rem;text-align:left;padding-right:8px}
   <div class="set-card">
     <div class="set-row">
       <div class="set-info">
-        <h4>Reset All Used</h4>
-        <p>Mark all questions as fresh</p>
-      </div>
-      <button class="icon-btn" style="background:var(--rdim);border-color:rgba(239,68,68,.2);color:var(--red);" onclick="resetAllUsed()">Reset</button>
-    </div>
-    <div class="set-row">
-      <div class="set-info">
         <h4>Export Data</h4>
-        <p>Download tracker JSON</p>
+        <p>Download tracker JSON backup</p>
       </div>
       <button class="icon-btn" onclick="exportData()">Export</button>
     </div>
@@ -669,9 +662,17 @@ function toggleChapter(ci) {
 
 function toggleUsed(ch, qi) {
   const q = data.questions[ch][qi];
-  q.used = !q.used;
-  saveLocalData();
-  renderHome();
+  const action = q.used ? 'Fresh' : 'Used';
+  const msg = q.used 
+    ? `"${ch}" ka Q${qi+1} wapas FRESH mark karna hai?` 
+    : `"${ch}" ka Q${qi+1} USED mark karna hai?`;
+  
+  if (confirm(msg)) {
+    q.used = !q.used;
+    saveLocalData();
+    renderHome();
+    showToast(`✓ Q${qi+1} marked as ${action}!`, 's');
+  }
 }
 
 function confirmDeleteChapter(ch) {
@@ -1196,15 +1197,6 @@ function confirmModal() {
 // ══════════════════════════════════════════════════════════
 // UTILITIES
 // ══════════════════════════════════════════════════════════
-function resetAllUsed() {
-  if (!confirm('Saare questions fresh mark karne hain?')) return;
-  Object.values(data.questions).forEach(qs => qs.forEach(q => q.used = false));
-  saveLocalData();
-  saveToGithub();
-  renderHome();
-  showToast('✓ All reset to fresh!', 's');
-}
-
 function exportData() {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
