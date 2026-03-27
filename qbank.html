@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QBank - Question Bank</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #252542;
+            --accent: #00d4aa;
+            --accent-dim: #00d4aa33;
+            --accent-glow: #00d4aa66;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-dim: #606070;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --success: #2ed573;
+            --border: #333355;
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* ===== HEADER ===== */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), #00a080);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #00ffcc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-dim);
+        }
+        
+        .sync-dot.connected { background: var(--success); }
+        .sync-dot.syncing { background: var(--warning); animation: pulse 1s infinite; }
+        .sync-dot.error { background: var(--danger); }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* ===== NAV TABS ===== */
+        .nav-tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+        
+        .nav-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+        
+        .nav-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        
+        .nav-tab-icon {
+            display: block;
+            font-size: 1.3rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .screen {
+            display: none;
+        }
+        
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #00a080);
+            color: #000;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px var(--accent-glow);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--accent);
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+        
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 8px;
+        }
+        
+        /* ===== INPUTS ===== */
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+        
+        .input::placeholder {
+            color: var(--text-dim);
+        }
+        
+        select.input {
+            cursor: pointer;
+        }
+        
+        /* ===== UPLOAD ZONE ===== */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--bg-tertiary);
+        }
+        
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+        
+        .upload-zone-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-zone-text {
+            color: var(--text-secondary);
+        }
+        
+        .upload-zone-hint {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-top: 0.5rem;
+        }
+        
+        /* ===== IMAGE GRID ===== */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        
+        .image-card {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .image-card:hover {
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+        
+        .image-card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+        
+        .image-card.used {
+            opacity: 0.5;
+        }
+        
+        .image-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-card-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .image-card-badge.used {
+            background: var(--danger);
+        }
+        
+        .image-card-badge.available {
+            background: var(--success);
+        }
+        
+        .image-card-select {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        
+        .image-card.selected .image-card-select {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #000;
+        }
+        
+        /* ===== CHAPTER TAGS ===== */
+        .chapter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .chapter-tag {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .chapter-tag:hover {
+            border-color: var(--accent);
+        }
+        
+        .chapter-tag.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+        
+        .chapter-tag-count {
+            background: var(--bg-primary);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+        }
+        
+        .chapter-tag.active .chapter-tag-count {
+            background: rgba(0,0,0,0.2);
+        }
+        
+        /* ===== STATS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-card {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        /* ===== CHAPTER INPUT ROW ===== */
+        .chapter-input-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .chapter-input-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .chapter-input-available {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .chapter-input-field {
+            width: 80px;
+            padding: 0.5rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+        }
+        
+        .chapter-input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        /* ===== PREVIEW AREA ===== */
+        .preview-area {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+            margin-bottom: 1rem;
+        }
+        
+        .preview-question {
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+        
+        .preview-question img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* ===== SETTINGS ===== */
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .settings-info h4 {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        
+        .settings-info p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .modal-body {
+            padding: 1.25rem;
+        }
+        
+        .modal-footer {
+            padding: 1.25rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 2000;
+        }
+        
+        .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease;
+            max-width: 350px;
+        }
+        
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--danger); }
+        .toast.info { border-left: 3px solid var(--accent); }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* ===== LOADING ===== */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            .header-content {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .image-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+            
+            .chapter-input-row {
+                flex-wrap: wrap;
+            }
+            
+            .chapter-input-name {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">Q</div>
+                <span class="logo-text">QBank</span>
+            </div>
+            <div class="sync-status" id="syncStatus">
+                <span class="sync-dot" id="syncDot"></span>
+                <span id="syncText">Not Connected</span>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Navigation -->
+    <nav class="nav-tabs">
+        <button class="nav-tab active" data-screen="upload">
+            <span class="nav-tab-icon">📤</span>
+            Upload
+        </button>
+        <button class="nav-tab" data-screen="store">
+            <span class="nav-tab-icon">📁</span>
+            Store Room
+        </button>
+        <button class="nav-tab" data-screen="generate">
+            <span class="nav-tab-icon">🎯</span>
+            Generate
+        </button>
+        <button class="nav-tab" data-screen="settings">
+            <span class="nav-tab-icon">⚙️</span>
+            Settings
+        </button>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <!-- Upload Screen -->
+        <section class="screen active" id="screen-upload">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Upload Questions</h2>
+                        <p class="card-subtitle">Add MCQ images to your question bank</p>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Select Chapter</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select class="input" id="uploadChapter" style="flex: 1;">
+                            <option value="">-- Select Chapter --</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="showAddChapterModal()">+ New</button>
+                    </div>
+                </div>
+                
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-zone-icon">📷</div>
+                    <div class="upload-zone-text">Drag & drop images or tap to select</div>
+                    <div class="upload-zone-hint">PNG, JPG supported • Multiple files allowed</div>
+                    <input type="file" id="fileInput" accept="image/*" multiple hidden>
+                </div>
+                
+                <div id="uploadPreview" style="margin-top: 1rem;"></div>
+                
+                <div id="uploadActions" style="margin-top: 1rem; display: none;">
+                    <button class="btn btn-primary" onclick="uploadImages()">
+                        📤 Upload to GitHub
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Store Room Screen -->
+        <section class="screen" id="screen-store">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Store Room</h2>
+                        <p class="card-subtitle">Browse your question bank</p>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" onclick="refreshStore()">🔄 Refresh</button>
+                </div>
+                
+                <div class="stats-grid" id="storeStats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalQuestions">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="usedQuestions">0</div>
+                        <div class="stat-label">Used</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="availableQuestions">0</div>
+                        <div class="stat-label">Available</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalChapters">0</div>
+                        <div class="stat-label">Chapters</div>
+                    </div>
+                </div>
+                
+                <div class="chapter-tags" id="chapterTags">
+                    <span class="chapter-tag active" data-chapter="all">All</span>
+                </div>
+                
+                <div class="image-grid" id="storeGrid"></div>
+            </div>
+        </section>
+        
+        <!-- Generate Screen -->
+        <section class="screen" id="screen-generate">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">🎯 Test Generator</h2>
+                        <p class="card-subtitle">Select questions per chapter</p>
+                    </div>
+                </div>
+                
+                <div id="chapterInputs"></div>
+                
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Total Questions:</span>
+                        <span id="totalSelected" style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">0</span>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="generateTest()" style="flex: 1;">
+                        🎯 Generate Test
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card" id="previewCard" style="display: none;">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Preview</h2>
+                        <p class="card-subtitle">Test paper ready</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="downloadPNG()">📷 PNG</button>
+                        <button class="btn btn-sm btn-primary" onclick="downloadPDF()">📄 PDF</button>
+                    </div>
+                </div>
+                <div class="preview-area" id="previewArea"></div>
+            </div>
+        </section>
+        
+        <!-- Settings Screen -->
+        <section class="screen" id="screen-settings">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">⚙️ Settings</h2>
+                </div>
+                
+                <div class="settings-row">
+                    <div class="settings-info">
+                        <h4>GitHub Token</h4>
+                        <p>Required for syncing with GitHub</p>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" onclick="showTokenModal()">
+                        Configure
+                    </button>
+                </div>
+                
+                <div class="settings-row">
+                    <div class="settings-info">
+                        <h4>Manage Chapters</h4>
+                        <p>Add, edit or delete chapters</p>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" onclick="showChaptersModal()">
+                        Manage
+                    </button>
+                </div>
+                
+                <div class="settings-row">
+                    <div class="settings-info">
+                        <h4>Reset All Used</h4>
+                        <p>Mark all questions as unused</p>
+                    </div>
+                    <button class="btn btn-sm btn-danger" onclick="resetAllUsed()">
+                        Reset
+                    </button>
+                </div>
+                
+                <div class="settings-row">
+                    <div class="settings-info">
+                        <h4>Export Data</h4>
+                        <p>Download tracker JSON</p>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" onclick="exportData()">
+                        Export
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">ℹ️ About</h2>
+                </div>
+                <p style="color: var(--text-secondary); line-height: 1.6;">
+                    <strong>QBank</strong> - Question Bank + Auto Test Generator<br><br>
+                    GitHub: rohanapatel121212-debug/qbank<br>
+                    Version: 1.0.0
+                </p>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Modals -->
+    <div class="modal-overlay" id="tokenModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">GitHub Configuration</h3>
+                <button class="modal-close" onclick="closeModal('tokenModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label class="input-label">GitHub Token</label>
+                    <input type="password" class="input" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                    Token needs 'repo' scope. Get from: GitHub → Settings → Developer settings → Personal access tokens
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('tokenModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveToken()">Save & Connect</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="chapterModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Chapter</h3>
+                <button class="modal-close" onclick="closeModal('chapterModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label class="input-label">Chapter Name</label>
+                    <input type="text" class="input" id="newChapterName" placeholder="e.g. Fractions">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('chapterModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addChapter()">Add Chapter</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="manageChaptersModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Manage Chapters</h3>
+                <button class="modal-close" onclick="closeModal('manageChaptersModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="manageChaptersList"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeModal('manageChaptersModal')">Done</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div id="loadingText">Loading...</div>
+    </div>
+
+    <script>
+        // ===== APP CONFIG =====
+        const APP_CONFIG = {
+            APP_NAME: 'QBank',
+            GH_OWNER: 'rohanapatel121212-debug',
+            GH_REPO: 'qbank',
+            GH_BRANCH: 'main',
+            IMAGES_PATH: 'images',
+            TRACKER_FILE: 'qbank_tracker.json',
+            DB_NAME: 'QBankDB'
+        };
+        
+        // ===== STATE =====
+        let state = {
+            token: '',
+            chapters: [],
+            questions: {},  // { chapter: [{ id, filename, url, used }] }
+            pendingUploads: [],
+            currentFilter: 'all'
+        };
+        
+        // ===== INIT =====
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLocalState();
+            initNavigation();
+            initUploadZone();
+            updateUI();
+        });
+        
+        // ===== NAVIGATION =====
+        function initNavigation() {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const screen = tab.dataset.screen;
+                    switchScreen(screen);
+                });
+            });
+        }
+        
+        function switchScreen(screenId) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-screen="${screenId}"]`).classList.add('active');
+            
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${screenId}`).classList.add('active');
+            
+            if (screenId === 'store') refreshStore();
+            if (screenId === 'generate') updateGenerateScreen();
+        }
+        
+        // ===== UPLOAD ZONE =====
+        function initUploadZone() {
+            const zone = document.getElementById('uploadZone');
+            const input = document.getElementById('fileInput');
+            
+            zone.addEventListener('click', () => input.click());
+            
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+            
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            input.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+        
+        function handleFiles(files) {
+            state.pendingUploads = [];
+            const preview = document.getElementById('uploadPreview');
+            preview.innerHTML = '';
+            
+            const grid = document.createElement('div');
+            grid.className = 'image-grid';
+            
+            Array.from(files).forEach((file, idx) => {
+                if (!file.type.startsWith('image/')) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    state.pendingUploads.push({
+                        name: file.name,
+                        data: e.target.result,
+                        file: file
+                    });
+                    
+                    const card = document.createElement('div');
+                    card.className = 'image-card';
+                    card.innerHTML = `<img src="${e.target.result}" alt="${file.name}">`;
+                    grid.appendChild(card);
+                    
+                    document.getElementById('uploadActions').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            preview.appendChild(grid);
+        }
+        
+        async function uploadImages() {
+            const chapter = document.getElementById('uploadChapter').value;
+            if (!chapter) {
+                showToast('Please select a chapter', 'error');
+                return;
+            }
+            
+            if (!state.token) {
+                showToast('Please configure GitHub token first', 'error');
+                switchScreen('settings');
+                return;
+            }
+            
+            if (state.pendingUploads.length === 0) {
+                showToast('No images to upload', 'error');
+                return;
+            }
+            
+            showLoading('Uploading images...');
+            
+            try {
+                for (let i = 0; i < state.pendingUploads.length; i++) {
+                    const upload = state.pendingUploads[i];
+                    const timestamp = Date.now();
+                    const ext = upload.name.split('.').pop();
+                    const filename = `${chapter}_${timestamp}_${i}.${ext}`;
+                    const path = `${APP_CONFIG.IMAGES_PATH}/${chapter}/${filename}`;
+                    
+                    updateLoading(`Uploading ${i + 1}/${state.pendingUploads.length}...`);
+                    
+                    // Upload to GitHub
+                    const base64 = upload.data.split(',')[1];
+                    await uploadToGitHub(path, base64);
+                    
+                    // Add to state
+                    if (!state.questions[chapter]) {
+                        state.questions[chapter] = [];
+                    }
+                    
+                    state.questions[chapter].push({
+                        id: `${chapter}_${timestamp}_${i}`,
+                        filename: filename,
+                        url: `https://raw.githubusercontent.com/${APP_CONFIG.GH_OWNER}/${APP_CONFIG.GH_REPO}/${APP_CONFIG.GH_BRANCH}/${path}`,
+                        used: false
+                    });
+                }
+                
+                // Save tracker
+                await saveTracker();
+                saveLocalState();
+                
+                // Clear
+                state.pendingUploads = [];
+                document.getElementById('uploadPreview').innerHTML = '';
+                document.getElementById('uploadActions').style.display = 'none';
+                document.getElementById('fileInput').value = '';
+                
+                hideLoading();
+                showToast(`Uploaded ${state.pendingUploads.length || 'all'} images successfully!`, 'success');
+                updateUI();
+                
+            } catch (error) {
+                hideLoading();
+                showToast('Upload failed: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+        
+        // ===== GITHUB API =====
+        async function uploadToGitHub(path, base64Content) {
+            const url = `https://api.github.com/repos/${APP_CONFIG.GH_OWNER}/${APP_CONFIG.GH_REPO}/contents/${path}`;
+            
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${state.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: `Add question image: ${path}`,
+                    content: base64Content,
+                    branch: APP_CONFIG.GH_BRANCH
+                })
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'GitHub upload failed');
+            }
+            
+            return await response.json();
+        }
+        
+        async function saveTracker() {
+            const data = {
+                chapters: state.chapters,
+                questions: state.questions,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+            const path = APP_CONFIG.TRACKER_FILE;
+            const url = `https://api.github.com/repos/${APP_CONFIG.GH_OWNER}/${APP_CONFIG.GH_REPO}/contents/${path}`;
+            
+            // Get existing file SHA if exists
+            let sha = null;
+            try {
+                const existing = await fetch(url, {
+                    headers: { 'Authorization': `token ${state.token}` }
+                });
+                if (existing.ok) {
+                    const data = await existing.json();
+                    sha = data.sha;
+                }
+            } catch (e) {}
+            
+            const body = {
+                message: 'Update QBank tracker',
+                content: content,
+                branch: APP_CONFIG.GH_BRANCH
+            };
+            if (sha) body.sha = sha;
+            
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${state.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to save tracker');
+            }
+        }
+        
+        async function loadTracker() {
+            if (!state.token) return;
+            
+            const url = `https://api.github.com/repos/${APP_CONFIG.GH_OWNER}/${APP_CONFIG.GH_REPO}/contents/${APP_CONFIG.TRACKER_FILE}`;
+            
+            try {
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `token ${state.token}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const content = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                    state.chapters = content.chapters || [];
+                    state.questions = content.questions || {};
+                    saveLocalState();
+                    updateUI();
+                    updateSyncStatus('connected');
+                }
+            } catch (error) {
+                console.error('Failed to load tracker:', error);
+            }
+        }
+        
+        // ===== LOCAL STORAGE =====
+        function saveLocalState() {
+            localStorage.setItem('qbank_state', JSON.stringify({
+                token: state.token,
+                chapters: state.chapters,
+                questions: state.questions
+            }));
+        }
+        
+        function loadLocalState() {
+            const saved = localStorage.getItem('qbank_state');
+            if (saved) {
+                const data = JSON.parse(saved);
+                state.token = data.token || '';
+                state.chapters = data.chapters || [];
+                state.questions = data.questions || {};
+            }
+            
+            if (state.token) {
+                updateSyncStatus('connected');
+                loadTracker();
+            }
+        }
+        
+        // ===== UI UPDATES =====
+        function updateUI() {
+            updateChapterDropdown();
+            updateChapterTags();
+            updateStats();
+        }
+        
+        function updateChapterDropdown() {
+            const select = document.getElementById('uploadChapter');
+            select.innerHTML = '<option value="">-- Select Chapter --</option>';
+            state.chapters.forEach(ch => {
+                select.innerHTML += `<option value="${ch}">${ch}</option>`;
+            });
+        }
+        
+        function updateChapterTags() {
+            const container = document.getElementById('chapterTags');
+            let html = '<span class="chapter-tag active" data-chapter="all" onclick="filterByChapter(\'all\')">All</span>';
+            
+            state.chapters.forEach(ch => {
+                const count = (state.questions[ch] || []).length;
+                html += `<span class="chapter-tag" data-chapter="${ch}" onclick="filterByChapter('${ch}')">
+                    ${ch}<span class="chapter-tag-count">${count}</span>
+                </span>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function updateStats() {
+            let total = 0, used = 0;
+            
+            Object.values(state.questions).forEach(qs => {
+                total += qs.length;
+                used += qs.filter(q => q.used).length;
+            });
+            
+            document.getElementById('totalQuestions').textContent = total;
+            document.getElementById('usedQuestions').textContent = used;
+            document.getElementById('availableQuestions').textContent = total - used;
+            document.getElementById('totalChapters').textContent = state.chapters.length;
+        }
+        
+        function filterByChapter(chapter) {
+            state.currentFilter = chapter;
+            
+            document.querySelectorAll('.chapter-tag').forEach(t => {
+                t.classList.toggle('active', t.dataset.chapter === chapter);
+            });
+            
+            renderStoreGrid();
+        }
+        
+        function refreshStore() {
+            if (state.token) {
+                showLoading('Syncing...');
+                loadTracker().then(() => {
+                    hideLoading();
+                    renderStoreGrid();
+                });
+            } else {
+                renderStoreGrid();
+            }
+        }
+        
+        function renderStoreGrid() {
+            const grid = document.getElementById('storeGrid');
+            let questions = [];
+            
+            if (state.currentFilter === 'all') {
+                Object.entries(state.questions).forEach(([ch, qs]) => {
+                    qs.forEach(q => questions.push({ ...q, chapter: ch }));
+                });
+            } else {
+                questions = (state.questions[state.currentFilter] || []).map(q => ({
+                    ...q, chapter: state.currentFilter
+                }));
+            }
+            
+            if (questions.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-icon">📭</div>
+                        <p>No questions yet</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Upload some images to get started</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = questions.map(q => `
+                <div class="image-card ${q.used ? 'used' : ''}" onclick="toggleUsed('${q.chapter}', '${q.id}')">
+                    <img src="${q.url}" alt="${q.filename}" loading="lazy">
+                    <span class="image-card-badge ${q.used ? 'used' : 'available'}">
+                        ${q.used ? 'Used' : 'Available'}
+                    </span>
+                </div>
+            `).join('');
+        }
+        
+        function toggleUsed(chapter, id) {
+            const q = state.questions[chapter].find(q => q.id === id);
+            if (q) {
+                q.used = !q.used;
+                saveLocalState();
+                saveTracker().catch(console.error);
+                renderStoreGrid();
+                updateStats();
+            }
+        }
+        
+        // ===== GENERATE SCREEN =====
+        function updateGenerateScreen() {
+            const container = document.getElementById('chapterInputs');
+            
+            if (state.chapters.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <p>No chapters yet</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Add chapters and upload questions first</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = state.chapters.map(ch => {
+                const total = (state.questions[ch] || []).length;
+                const available = (state.questions[ch] || []).filter(q => !q.used).length;
+                
+                return `
+                    <div class="chapter-input-row">
+                        <span class="chapter-input-name">${ch}</span>
+                        <span class="chapter-input-available">${available}/${total} available</span>
+                        <input type="number" class="chapter-input-field" 
+                            id="gen-${ch}" min="0" max="${available}" value="0"
+                            onchange="updateTotalSelected()">
+                    </div>
+                `;
+            }).join('');
+            
+            updateTotalSelected();
+        }
+        
+        function updateTotalSelected() {
+            let total = 0;
+            state.chapters.forEach(ch => {
+                const input = document.getElementById(`gen-${ch}`);
+                if (input) total += parseInt(input.value) || 0;
+            });
+            document.getElementById('totalSelected').textContent = total;
+        }
+        
+        async function generateTest() {
+            const selections = {};
+            let totalSelected = 0;
+            
+            state.chapters.forEach(ch => {
+                const input = document.getElementById(`gen-${ch}`);
+                const count = parseInt(input?.value) || 0;
+                if (count > 0) {
+                    selections[ch] = count;
+                    totalSelected += count;
+                }
+            });
+            
+            if (totalSelected === 0) {
+                showToast('Please select at least 1 question', 'error');
+                return;
+            }
+            
+            showLoading('Generating test...');
+            
+            // Pick unused questions
+            const selectedQuestions = [];
+            
+            for (const [chapter, count] of Object.entries(selections)) {
+                const available = (state.questions[chapter] || []).filter(q => !q.used);
+                
+                if (available.length < count) {
+                    hideLoading();
+                    const reset = confirm(`${chapter}: Only ${available.length} available, need ${count}. Reset used questions?`);
+                    if (reset) {
+                        state.questions[chapter].forEach(q => q.used = false);
+                        saveLocalState();
+                    }
+                    return generateTest(); // Retry
+                }
+                
+                // Shuffle and pick
+                const shuffled = [...available].sort(() => Math.random() - 0.5);
+                const picked = shuffled.slice(0, count);
+                
+                picked.forEach(q => {
+                    selectedQuestions.push({ ...q, chapter });
+                    // Mark as used
+                    const orig = state.questions[chapter].find(oq => oq.id === q.id);
+                    if (orig) orig.used = true;
+                });
+            }
+            
+            // Save used status
+            saveLocalState();
+            saveTracker().catch(console.error);
+            
+            // Render preview
+            await renderPreview(selectedQuestions);
+            
+            hideLoading();
+            document.getElementById('previewCard').style.display = 'block';
+            updateStats();
+            updateGenerateScreen();
+        }
+        
+        async function renderPreview(questions) {
+            const preview = document.getElementById('previewArea');
+            preview.innerHTML = '';
+            
+            for (let i = 0; i < questions.length; i++) {
+                const q = questions[i];
+                const div = document.createElement('div');
+                div.className = 'preview-question';
+                
+                const img = new Image();
+                img.src = q.url;
+                img.style.maxWidth = '100%';
+                img.crossOrigin = 'anonymous';
+                
+                await new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+                
+                div.appendChild(img);
+                preview.appendChild(div);
+            }
+        }
+        
+        async function downloadPNG() {
+            showLoading('Creating PNG...');
+            
+            try {
+                const preview = document.getElementById('previewArea');
+                const canvas = await html2canvas(preview, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                const link = document.createElement('a');
+                link.download = `QBank_Test_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                hideLoading();
+                showToast('PNG downloaded!', 'success');
+            } catch (error) {
+                hideLoading();
+                showToast('PNG generation failed', 'error');
+                console.error(error);
+            }
+        }
+        
+        async function downloadPDF() {
+            showLoading('Creating PDF...');
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const preview = document.getElementById('previewArea');
+                
+                const canvas = await html2canvas(preview, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 190;
+                const pageHeight = 277;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 10;
+                
+                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight + 10;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                pdf.save(`QBank_Test_${Date.now()}.pdf`);
+                
+                hideLoading();
+                showToast('PDF downloaded!', 'success');
+            } catch (error) {
+                hideLoading();
+                showToast('PDF generation failed', 'error');
+                console.error(error);
+            }
+        }
+        
+        // ===== MODALS =====
+        function showTokenModal() {
+            document.getElementById('ghToken').value = state.token;
+            document.getElementById('tokenModal').classList.add('active');
+        }
+        
+        function showAddChapterModal() {
+            document.getElementById('newChapterName').value = '';
+            document.getElementById('chapterModal').classList.add('active');
+        }
+        
+        function showChaptersModal() {
+            const list = document.getElementById('manageChaptersList');
+            
+            if (state.chapters.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-secondary);">No chapters yet</p>';
+            } else {
+                list.innerHTML = state.chapters.map(ch => {
+                    const count = (state.questions[ch] || []).length;
+                    const used = (state.questions[ch] || []).filter(q => q.used).length;
+                    
+                    return `
+                        <div class="settings-row">
+                            <div class="settings-info">
+                                <h4>${ch}</h4>
+                                <p>${count} questions • ${used} used</p>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-sm btn-secondary" onclick="resetChapter('${ch}')">Reset</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteChapter('${ch}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            document.getElementById('manageChaptersModal').classList.add('active');
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        
+        async function saveToken() {
+            const token = document.getElementById('ghToken').value.trim();
+            if (!token) {
+                showToast('Please enter a token', 'error');
+                return;
+            }
+            
+            state.token = token;
+            saveLocalState();
+            closeModal('tokenModal');
+            
+            showLoading('Connecting...');
+            await loadTracker();
+            hideLoading();
+            
+            showToast('Connected to GitHub!', 'success');
+        }
+        
+        function addChapter() {
+            const name = document.getElementById('newChapterName').value.trim();
+            if (!name) {
+                showToast('Please enter chapter name', 'error');
+                return;
+            }
+            
+            if (state.chapters.includes(name)) {
+                showToast('Chapter already exists', 'error');
+                return;
+            }
+            
+            state.chapters.push(name);
+            state.questions[name] = [];
+            saveLocalState();
+            
+            if (state.token) {
+                saveTracker().catch(console.error);
+            }
+            
+            closeModal('chapterModal');
+            updateUI();
+            showToast(`Chapter "${name}" added!`, 'success');
+        }
+        
+        function resetChapter(chapter) {
+            if (!confirm(`Reset all questions in "${chapter}" to unused?`)) return;
+            
+            (state.questions[chapter] || []).forEach(q => q.used = false);
+            saveLocalState();
+            
+            if (state.token) {
+                saveTracker().catch(console.error);
+            }
+            
+            showToast(`${chapter} reset!`, 'success');
+            showChaptersModal();
+            updateStats();
+        }
+        
+        function deleteChapter(chapter) {
+            if (!confirm(`Delete "${chapter}" and all its questions? This cannot be undone.`)) return;
+            
+            state.chapters = state.chapters.filter(c => c !== chapter);
+            delete state.questions[chapter];
+            saveLocalState();
+            
+            if (state.token) {
+                saveTracker().catch(console.error);
+            }
+            
+            showToast(`${chapter} deleted!`, 'success');
+            showChaptersModal();
+            updateUI();
+        }
+        
+        function resetAllUsed() {
+            if (!confirm('Reset ALL questions to unused?')) return;
+            
+            Object.values(state.questions).forEach(qs => {
+                qs.forEach(q => q.used = false);
+            });
+            
+            saveLocalState();
+            
+            if (state.token) {
+                saveTracker().catch(console.error);
+            }
+            
+            showToast('All questions reset!', 'success');
+            updateStats();
+            updateGenerateScreen();
+        }
+        
+        function exportData() {
+            const data = {
+                chapters: state.chapters,
+                questions: state.questions,
+                exportedAt: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.download = `qbank_export_${Date.now()}.json`;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            
+            showToast('Data exported!', 'success');
+        }
+        
+        // ===== SYNC STATUS =====
+        function updateSyncStatus(status) {
+            const dot = document.getElementById('syncDot');
+            const text = document.getElementById('syncText');
+            
+            dot.className = 'sync-dot ' + status;
+            
+            switch(status) {
+                case 'connected':
+                    text.textContent = 'Connected';
+                    break;
+                case 'syncing':
+                    text.textContent = 'Syncing...';
+                    break;
+                case 'error':
+                    text.textContent = 'Sync Error';
+                    break;
+                default:
+                    text.textContent = 'Not Connected';
+            }
+        }
+        
+        // ===== TOAST =====
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // ===== LOADING =====
+        function showLoading(text = 'Loading...') {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+        
+        function updateLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
