@@ -2,13 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>QBank - Question Bank</title>
+    
+    <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a2e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="QBank">
+    
+    <!-- iOS Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-title" content="QBank">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" href="icon-512.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    
+    <!-- MS Tile -->
+    <meta name="msapplication-TileColor" content="#1a1a2e">
+    <meta name="msapplication-TileImage" content="icon-192.png">
     
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -44,7 +62,23 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
+            min-height: -webkit-fill-available;
             overflow-x: hidden;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+        
+        /* Prevent pull-to-refresh */
+        html {
+            overscroll-behavior: none;
+        }
+        
+        /* Smooth scrolling */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
         }
         
         /* ===== HEADER ===== */
@@ -1783,6 +1817,101 @@
         
         function hideLoading() {
             document.getElementById('loadingOverlay').classList.remove('active');
+        }
+        
+        // ===== SERVICE WORKER =====
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => {
+                        console.log('SW registered:', reg.scope);
+                        
+                        // Check for updates
+                        reg.addEventListener('updatefound', () => {
+                            const newWorker = reg.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showToast('App update available! Refresh to update.', 'info');
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+            
+            // Listen for sync messages
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data.type === 'SYNC_COMPLETE') {
+                    showToast('Offline changes synced!', 'success');
+                }
+            });
+        }
+        
+        // ===== INSTALL PROMPT =====
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallBanner();
+        });
+        
+        function showInstallBanner() {
+            // Check if already installed
+            if (window.matchMedia('(display-mode: standalone)').matches) return;
+            
+            const banner = document.createElement('div');
+            banner.id = 'installBanner';
+            banner.innerHTML = `
+                <div style="position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(135deg, var(--accent), #00a080); padding: 1rem; display: flex; align-items: center; justify-content: space-between; z-index: 2000; box-shadow: 0 -5px 20px rgba(0,0,0,0.3);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <img src="icon-192.png" alt="QBank" style="width: 40px; height: 40px; border-radius: 10px;">
+                        <div>
+                            <div style="font-weight: 600; color: #000;">Install QBank</div>
+                            <div style="font-size: 0.8rem; color: rgba(0,0,0,0.7);">Add to Home Screen</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="dismissInstall()" style="padding: 0.5rem 1rem; background: transparent; border: 1px solid rgba(0,0,0,0.3); border-radius: 6px; color: #000; cursor: pointer;">Later</button>
+                        <button onclick="installApp()" style="padding: 0.5rem 1rem; background: #000; border: none; border-radius: 6px; color: var(--accent); cursor: pointer; font-weight: 600;">Install</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(banner);
+        }
+        
+        async function installApp() {
+            if (!deferredPrompt) return;
+            
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                showToast('App installed! 🎉', 'success');
+            }
+            
+            deferredPrompt = null;
+            dismissInstall();
+        }
+        
+        function dismissInstall() {
+            const banner = document.getElementById('installBanner');
+            if (banner) banner.remove();
+        }
+        
+        // iOS Install Instructions
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        }
+        
+        function isInStandaloneMode() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        }
+        
+        if (isIOS() && !isInStandaloneMode()) {
+            setTimeout(() => {
+                showToast('Tap Share ↑ then "Add to Home Screen" to install', 'info');
+            }, 3000);
         }
     </script>
 </body>
