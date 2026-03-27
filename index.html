@@ -372,18 +372,8 @@ select.num-inp{width:auto;font-size:.72rem;text-align:left;padding-right:8px}
   <div class="sl" style="margin-top:4px;">GitHub Config</div>
 
   <div class="set-card" style="background:rgba(6,182,212,.05);border-color:rgba(6,182,212,.15);">
-    <div style="font-size:.62rem;color:var(--cyan);font-weight:700;margin-bottom:6px;">📌 Repo</div>
-    <div style="font-family:var(--mono);font-size:.78rem;color:var(--t2);" id="repoDisplay">Not configured</div>
-  </div>
-
-  <div class="set-card">
-    <div class="set-lbl">GitHub Owner</div>
-    <input class="inp" id="ghOwner" placeholder="rohanapatel121212-debug">
-  </div>
-  
-  <div class="set-card">
-    <div class="set-lbl">GitHub Repo</div>
-    <input class="inp" id="ghRepo" placeholder="qbank">
+    <div style="font-size:.62rem;color:var(--cyan);font-weight:700;margin-bottom:6px;">📌 Repo (fixed)</div>
+    <div style="font-family:var(--mono);font-size:.78rem;color:var(--t2);">rohanapatel121212-debug / qbank</div>
   </div>
 
   <div class="set-card">
@@ -394,7 +384,7 @@ select.num-inp{width:auto;font-size:.72rem;text-align:left;padding-right:8px}
     </div>
   </div>
 
-  <button class="big-btn btn-g" onclick="saveSettings()">✓ Save & Connect</button>
+  <button class="big-btn btn-g" onclick="saveSettings()">✓ Save Token & Sync</button>
   
   <div class="sl" style="margin-top:16px;">Data Management</div>
   
@@ -470,7 +460,7 @@ window.onload = () => {
   loadSettings();
   loadLocalData();
   const s = getS();
-  if (s.token && s.owner && s.repo) {
+  if (s.token) {
     showOverlay('GitHub se sync ho raha hai...');
     loadFromGithub().finally(() => {
       hideOverlay();
@@ -479,7 +469,7 @@ window.onload = () => {
   } else {
     renderHome();
     showPage('settings');
-    showToast('Pehle GitHub settings configure karo ⚙️', 'a');
+    showToast('Pehle GitHub token set karo ⚙️', 'a');
   }
   initUploadZone();
 };
@@ -500,30 +490,28 @@ function showPage(name) {
 // ══════════════════════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════════════════════
+const FIXED_OWNER = 'rohanapatel121212-debug';
+const FIXED_REPO = 'qbank';
+
 function getS() {
-  try { return JSON.parse(localStorage.getItem('qbank_cfg') || '{}'); }
-  catch { return {}; }
+  try { 
+    const s = JSON.parse(localStorage.getItem('qbank_cfg') || '{}');
+    s.owner = FIXED_OWNER;
+    s.repo = FIXED_REPO;
+    return s;
+  }
+  catch { return { owner: FIXED_OWNER, repo: FIXED_REPO }; }
 }
 function loadSettings() {
   const s = getS();
-  document.getElementById('ghOwner').value = s.owner || '';
-  document.getElementById('ghRepo').value = s.repo || '';
   document.getElementById('ghToken').value = s.token || '';
-  updateRepoDisplay();
 }
 function saveSettings() {
-  const owner = document.getElementById('ghOwner').value.trim();
-  const repo = document.getElementById('ghRepo').value.trim();
   const token = document.getElementById('ghToken').value.trim();
-  if (!owner || !repo || !token) { showToast('Sab fields bharo!', 'e'); return; }
-  localStorage.setItem('qbank_cfg', JSON.stringify({ owner, repo, token }));
-  updateRepoDisplay();
-  showToast('Settings saved! Syncing...', 's');
+  if (!token) { showToast('Token daalo!', 'e'); return; }
+  localStorage.setItem('qbank_cfg', JSON.stringify({ token }));
+  showToast('Token saved! Syncing...', 's');
   loadFromGithub();
-}
-function updateRepoDisplay() {
-  const s = getS();
-  document.getElementById('repoDisplay').textContent = s.owner && s.repo ? `${s.owner} / ${s.repo}` : 'Not configured';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -544,7 +532,7 @@ function loadLocalData() {
 // ══════════════════════════════════════════════════════════
 async function loadFromGithub() {
   const s = getS();
-  if (!s.token || !s.owner || !s.repo) return;
+  if (!s.token) return;
   try {
     const url = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${APP_CONFIG.TRACKER_FILE}`;
     const res = await fetch(url, { headers: { 'Authorization': `token ${s.token}` } });
@@ -561,7 +549,7 @@ async function loadFromGithub() {
 
 async function saveToGithub() {
   const s = getS();
-  if (!s.token || !s.owner || !s.repo) { showToast('GitHub settings configure karo!', 'e'); return; }
+  if (!s.token) { showToast('GitHub token set karo!', 'e'); return; }
   
   showOverlay('Saving to GitHub...');
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
