@@ -152,17 +152,6 @@ html{overscroll-behavior:none}
 .img-thumb.used::after{content:'✓';position:absolute;inset:0;background:rgba(239,68,68,.3);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.8rem}
 .img-thumb.fresh{border-color:var(--green)}
 
-/* ══════════════ UPLOAD PAGE ══════════════ */
-.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s2)}
-.upload-zone:active,.upload-zone.dragover{border-color:var(--green);background:var(--gdim)}
-.upload-zone-icon{font-size:2.5rem;margin-bottom:8px}
-.upload-zone-text{font-size:.85rem;font-weight:600}
-.upload-zone-hint{font-size:.68rem;color:var(--t2);margin-top:4px}
-.preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
-.preview-thumb{aspect-ratio:1;border-radius:6px;overflow:hidden;position:relative}
-.preview-thumb img{width:100%;height:100%;object-fit:cover}
-.preview-remove{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
-
 /* ══════════════ GENERATE PAGE ══════════════ */
 .paper-config{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:10px}
 .pc-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -279,40 +268,12 @@ select.num-inp{width:auto;font-size:.72rem;text-align:left;padding-right:8px}
 
   <div style="display:flex;align-items:center;justify-content:space-between;">
     <div class="sl" style="flex:1;margin:0 0 9px;">Chapters</div>
-    <button class="icon-btn c" onclick="openModal('addChapter')" style="margin-bottom:9px;margin-left:10px;">＋ Chapter</button>
+    <button class="icon-btn c" onclick="scanGitHub()" style="margin-bottom:9px;margin-left:10px;">🔍 Scan GitHub</button>
   </div>
 
   <div id="chapters-list"></div>
   
   <button class="big-btn btn-c" onclick="showPage('generate')">⚡ Test Generator</button>
-</div>
-</div>
-
-<!-- ══════ UPLOAD ══════ -->
-<div class="page" id="page-upload">
-<div class="pi">
-  <div class="sl" style="margin-top:4px;">Upload Questions</div>
-  
-  <div class="card">
-    <div class="set-lbl">Select Chapter</div>
-    <div style="display:flex;gap:6px;">
-      <select class="inp" id="uploadChapter" style="flex:1;"></select>
-      <button class="icon-btn c" onclick="openModal('addChapter')">+ New</button>
-    </div>
-  </div>
-  
-  <div class="upload-zone" id="uploadZone">
-    <div class="upload-zone-icon">📷</div>
-    <div class="upload-zone-text">Tap to select images</div>
-    <div class="upload-zone-hint">PNG, JPG • Multiple files</div>
-    <input type="file" id="fileInput" accept="image/*" multiple hidden>
-  </div>
-  
-  <div id="uploadPreview"></div>
-  
-  <div id="uploadActions" style="margin-top:12px;display:none;">
-    <button class="big-btn btn-g" onclick="uploadImages()">📤 Upload to GitHub</button>
-  </div>
 </div>
 </div>
 
@@ -405,7 +366,6 @@ select.num-inp{width:auto;font-size:.72rem;text-align:left;padding-right:8px}
 <!-- BOTTOM NAV -->
 <div class="bnav" id="bnav">
   <div class="ni active" onclick="showPage('home')"><div class="ni-icon">📚</div><div class="ni-lbl">Home</div></div>
-  <div class="ni" onclick="showPage('upload')"><div class="ni-icon">📤</div><div class="ni-lbl">Upload</div></div>
   <div class="ni" onclick="showPage('generate');renderChDistEditor()"><div class="ni-icon">⚡</div><div class="ni-lbl">Generate</div><div class="ni-badge" id="nb-paper"></div></div>
   <div class="ni" onclick="showPage('settings')"><div class="ni-icon">⚙️</div><div class="ni-lbl">Settings</div></div>
 </div>
@@ -451,7 +411,6 @@ let data = { chapters: [], questions: {}, history: [] };
 let chDist = {};           // manual chapter distribution
 let currentPaper = null;   // generated paper
 let modalMode = null;
-let pendingUploads = [];
 
 // ══════════════════════════════════════════════════════════
 // INIT
@@ -471,8 +430,116 @@ window.onload = () => {
     showPage('settings');
     showToast('Pehle GitHub token set karo ⚙️', 'a');
   }
-  initUploadZone();
 };
+
+// ══════════════════════════════════════════════════════════
+// SCAN GITHUB - Auto detect images
+// ══════════════════════════════════════════════════════════
+async function scanGitHub() {
+  const s = getS();
+  if (!s.token) { 
+    showToast('Pehle GitHub token set karo!', 'e'); 
+    showPage('settings'); 
+    return; 
+  }
+  
+  showOverlay('GitHub scan ho raha hai...');
+  
+  try {
+    // Step 1: Get list of folders in images/
+    const foldersUrl = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${APP_CONFIG.IMAGES_PATH}`;
+    const foldersRes = await fetch(foldersUrl, { 
+      headers: { 'Authorization': `token ${s.token}` } 
+    });
+    
+    if (!foldersRes.ok) {
+      if (foldersRes.status === 404) {
+        hideOverlay();
+        showToast('images/ folder nahi mila! Pehle GitHub pe banao.', 'e');
+        return;
+      }
+      throw new Error('GitHub API error');
+    }
+    
+    const folders = await foldersRes.json();
+    const chapterFolders = folders.filter(f => f.type === 'dir');
+    
+    if (!chapterFolders.length) {
+      hideOverlay();
+      showToast('Koi chapter folder nahi mila! images/ChapterName/ banao.', 'a');
+      return;
+    }
+    
+    let newChapters = 0, newImages = 0;
+    
+    // Step 2: For each folder, get images
+    for (let i = 0; i < chapterFolders.length; i++) {
+      const folder = chapterFolders[i];
+      const chapterName = folder.name;
+      
+      updateOverlay(`Scanning ${chapterName}...`, (i / chapterFolders.length) * 80);
+      
+      // Add chapter if not exists
+      if (!data.chapters.includes(chapterName)) {
+        data.chapters.push(chapterName);
+        data.questions[chapterName] = [];
+        newChapters++;
+      }
+      
+      // Get images in this folder
+      const imagesUrl = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${APP_CONFIG.IMAGES_PATH}/${chapterName}`;
+      const imagesRes = await fetch(imagesUrl, { 
+        headers: { 'Authorization': `token ${s.token}` } 
+      });
+      
+      if (!imagesRes.ok) continue;
+      
+      const files = await imagesRes.json();
+      const imageFiles = files.filter(f => 
+        f.type === 'file' && /\.(png|jpg|jpeg|gif|webp)$/i.test(f.name)
+      );
+      
+      // Add new images
+      const existingUrls = (data.questions[chapterName] || []).map(q => q.url);
+      
+      for (const img of imageFiles) {
+        const imgUrl = `https://raw.githubusercontent.com/${s.owner}/${s.repo}/main/${APP_CONFIG.IMAGES_PATH}/${chapterName}/${img.name}`;
+        
+        if (!existingUrls.includes(imgUrl)) {
+          if (!data.questions[chapterName]) data.questions[chapterName] = [];
+          
+          data.questions[chapterName].push({
+            id: `${chapterName}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+            filename: img.name,
+            url: imgUrl,
+            used: false,
+            scannedAt: new Date().toISOString()
+          });
+          newImages++;
+        }
+      }
+    }
+    
+    // Step 3: Save to local and GitHub
+    updateOverlay('Saving...', 90);
+    saveLocalData();
+    await saveToGithub();
+    
+    hideOverlay();
+    renderHome();
+    
+    if (newChapters || newImages) {
+      showToast(`✅ Found: ${newChapters} new chapters, ${newImages} new images!`, 's');
+    } else {
+      showToast('Koi naya image nahi mila. Sab already synced hai!', 'a');
+    }
+    
+  } catch (e) {
+    hideOverlay();
+    showToast('Scan failed: ' + e.message, 'e');
+    console.error(e);
+  }
+}
 
 // ══════════════════════════════════════════════════════════
 // NAVIGATION
@@ -481,9 +548,8 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  document.querySelectorAll('.ni')[['home','upload','generate','settings'].indexOf(name)]?.classList.add('active');
+  document.querySelectorAll('.ni')[['home','generate','settings'].indexOf(name)]?.classList.add('active');
   if (name === 'home') renderHome();
-  if (name === 'upload') updateChapterDropdown();
   if (name === 'generate') renderChDistEditor();
 }
 
@@ -576,18 +642,6 @@ async function saveToGithub() {
   hideOverlay();
 }
 
-async function uploadImageToGithub(path, base64) {
-  const s = getS();
-  const url = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${path}`;
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Authorization': `token ${s.token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: `Add: ${path}`, content: base64, branch: 'main' })
-  });
-  if (!res.ok) throw new Error('Upload failed');
-  return await res.json();
-}
-
 // ══════════════════════════════════════════════════════════
 // HOME PAGE
 // ══════════════════════════════════════════════════════════
@@ -672,115 +726,6 @@ function confirmDeleteChapter(ch) {
     renderHome();
     showToast('Chapter deleted!', 's');
   }
-}
-
-// ══════════════════════════════════════════════════════════
-// UPLOAD
-// ══════════════════════════════════════════════════════════
-function initUploadZone() {
-  const zone = document.getElementById('uploadZone');
-  const input = document.getElementById('fileInput');
-  
-  zone.onclick = () => input.click();
-  zone.ondragover = e => { e.preventDefault(); zone.classList.add('dragover'); };
-  zone.ondragleave = () => zone.classList.remove('dragover');
-  zone.ondrop = e => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); };
-  input.onchange = e => handleFiles(e.target.files);
-}
-
-function updateChapterDropdown() {
-  const sel = document.getElementById('uploadChapter');
-  sel.innerHTML = '<option value="">-- Select Chapter --</option>' + 
-    data.chapters.map(ch => `<option value="${ch}">${ch}</option>`).join('');
-}
-
-function handleFiles(files) {
-  pendingUploads = [];
-  const preview = document.getElementById('uploadPreview');
-  preview.innerHTML = '';
-  
-  if (!files.length) return;
-  
-  const grid = document.createElement('div');
-  grid.className = 'preview-grid';
-  
-  Array.from(files).forEach((file, i) => {
-    if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      pendingUploads.push({ name: file.name, data: e.target.result });
-      const thumb = document.createElement('div');
-      thumb.className = 'preview-thumb';
-      thumb.innerHTML = `<img src="${e.target.result}"><button class="preview-remove" onclick="removeUpload(${i})">✕</button>`;
-      grid.appendChild(thumb);
-      document.getElementById('uploadActions').style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-  });
-  
-  preview.appendChild(grid);
-}
-
-function removeUpload(i) {
-  pendingUploads.splice(i, 1);
-  if (!pendingUploads.length) document.getElementById('uploadActions').style.display = 'none';
-  // Re-render preview
-  const preview = document.getElementById('uploadPreview');
-  if (pendingUploads.length) {
-    preview.innerHTML = `<div class="preview-grid">${pendingUploads.map((u, i) => `
-      <div class="preview-thumb"><img src="${u.data}"><button class="preview-remove" onclick="removeUpload(${i})">✕</button></div>
-    `).join('')}</div>`;
-  } else {
-    preview.innerHTML = '';
-  }
-}
-
-async function uploadImages() {
-  const chapter = document.getElementById('uploadChapter').value;
-  if (!chapter) { showToast('Chapter select karo!', 'e'); return; }
-  if (!pendingUploads.length) { showToast('Koi image nahi!', 'e'); return; }
-  
-  const s = getS();
-  if (!s.token) { showToast('GitHub token set karo!', 'e'); showPage('settings'); return; }
-  
-  showOverlay('Uploading images...');
-  
-  if (!data.questions[chapter]) data.questions[chapter] = [];
-  
-  for (let i = 0; i < pendingUploads.length; i++) {
-    const u = pendingUploads[i];
-    const ts = Date.now();
-    const ext = u.name.split('.').pop();
-    const filename = `${chapter.replace(/\s+/g,'_')}_${ts}_${i}.${ext}`;
-    const path = `${APP_CONFIG.IMAGES_PATH}/${chapter}/${filename}`;
-    
-    updateOverlay(`Uploading ${i+1}/${pendingUploads.length}...`, (i/pendingUploads.length)*90);
-    
-    try {
-      const base64 = u.data.split(',')[1];
-      await uploadImageToGithub(path, base64);
-      
-      data.questions[chapter].push({
-        id: `${chapter}_${ts}_${i}`,
-        filename,
-        url: `https://raw.githubusercontent.com/${s.owner}/${s.repo}/main/${path}`,
-        used: false,
-        uploadDate: new Date().toISOString()
-      });
-    } catch (e) { console.error(e); }
-  }
-  
-  saveLocalData();
-  await saveToGithub();
-  
-  pendingUploads = [];
-  document.getElementById('uploadPreview').innerHTML = '';
-  document.getElementById('uploadActions').style.display = 'none';
-  document.getElementById('fileInput').value = '';
-  
-  hideOverlay();
-  showToast(`✓ ${pendingUploads.length || 'All'} images uploaded!`, 's');
-  renderHome();
 }
 
 // ══════════════════════════════════════════════════════════
