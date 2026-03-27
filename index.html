@@ -1,1918 +1,1257 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>QBank - Question Bank</title>
-    
-    <!-- PWA Meta Tags -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1a1a2e">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="QBank">
-    
-    <!-- iOS Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="QBank">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    
-    <!-- iOS Splash Screens -->
-    <link rel="apple-touch-startup-image" href="icon-512.png">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-    
-    <!-- MS Tile -->
-    <meta name="msapplication-TileColor" content="#1a1a2e">
-    <meta name="msapplication-TileImage" content="icon-192.png">
-    
-    <!-- External Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        :root {
-            --bg-primary: #0f0f1a;
-            --bg-secondary: #1a1a2e;
-            --bg-tertiary: #252542;
-            --accent: #00d4aa;
-            --accent-dim: #00d4aa33;
-            --accent-glow: #00d4aa66;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0b0;
-            --text-dim: #606070;
-            --danger: #ff4757;
-            --warning: #ffa502;
-            --success: #2ed573;
-            --border: #333355;
-        }
-        
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
-            overflow-x: hidden;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
-        }
-        
-        /* Prevent pull-to-refresh */
-        html {
-            overscroll-behavior: none;
-        }
-        
-        /* Smooth scrolling */
-        * {
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-        }
-        
-        /* ===== HEADER ===== */
-        .header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--accent), #00a080);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1.2rem;
-        }
-        
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--accent), #00ffcc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .sync-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-        
-        .sync-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--text-dim);
-        }
-        
-        .sync-dot.connected { background: var(--success); }
-        .sync-dot.syncing { background: var(--warning); animation: pulse 1s infinite; }
-        .sync-dot.error { background: var(--danger); }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        /* ===== NAV TABS ===== */
-        .nav-tabs {
-            display: flex;
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
-            overflow-x: auto;
-        }
-        
-        .nav-tab {
-            flex: 1;
-            padding: 1rem;
-            text-align: center;
-            cursor: pointer;
-            border: none;
-            background: none;
-            color: var(--text-secondary);
-            font-family: inherit;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.3s;
-            border-bottom: 3px solid transparent;
-            white-space: nowrap;
-        }
-        
-        .nav-tab:hover {
-            color: var(--text-primary);
-            background: var(--bg-tertiary);
-        }
-        
-        .nav-tab.active {
-            color: var(--accent);
-            border-bottom-color: var(--accent);
-        }
-        
-        .nav-tab-icon {
-            display: block;
-            font-size: 1.3rem;
-            margin-bottom: 0.25rem;
-        }
-        
-        /* ===== MAIN CONTENT ===== */
-        .main-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem;
-        }
-        
-        .screen {
-            display: none;
-        }
-        
-        .screen.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* ===== CARDS ===== */
-        .card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.25rem;
-            margin-bottom: 1rem;
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        
-        .card-subtitle {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-        
-        /* ===== BUTTONS ===== */
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            border: none;
-            font-family: inherit;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent), #00a080);
-            color: #000;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px var(--accent-glow);
-        }
-        
-        .btn-secondary {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-        
-        .btn-secondary:hover {
-            border-color: var(--accent);
-        }
-        
-        .btn-danger {
-            background: var(--danger);
-            color: #fff;
-        }
-        
-        .btn-sm {
-            padding: 0.5rem 1rem;
-            font-size: 0.85rem;
-        }
-        
-        .btn-icon {
-            width: 36px;
-            height: 36px;
-            padding: 0;
-            border-radius: 8px;
-        }
-        
-        /* ===== INPUTS ===== */
-        .input-group {
-            margin-bottom: 1rem;
-        }
-        
-        .input-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-        
-        .input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: inherit;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-        
-        .input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-dim);
-        }
-        
-        .input::placeholder {
-            color: var(--text-dim);
-        }
-        
-        select.input {
-            cursor: pointer;
-        }
-        
-        /* ===== UPLOAD ZONE ===== */
-        .upload-zone {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: var(--bg-tertiary);
-        }
-        
-        .upload-zone:hover, .upload-zone.dragover {
-            border-color: var(--accent);
-            background: var(--accent-dim);
-        }
-        
-        .upload-zone-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        
-        .upload-zone-text {
-            color: var(--text-secondary);
-        }
-        
-        .upload-zone-hint {
-            font-size: 0.85rem;
-            color: var(--text-dim);
-            margin-top: 0.5rem;
-        }
-        
-        /* ===== IMAGE GRID ===== */
-        .image-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 1rem;
-        }
-        
-        .image-card {
-            position: relative;
-            aspect-ratio: 1;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 2px solid var(--border);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .image-card:hover {
-            border-color: var(--accent);
-            transform: scale(1.02);
-        }
-        
-        .image-card.selected {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-dim);
-        }
-        
-        .image-card.used {
-            opacity: 0.5;
-        }
-        
-        .image-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .image-card-badge {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        
-        .image-card-badge.used {
-            background: var(--danger);
-        }
-        
-        .image-card-badge.available {
-            background: var(--success);
-        }
-        
-        .image-card-select {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: var(--bg-secondary);
-            border: 2px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-        }
-        
-        .image-card.selected .image-card-select {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #000;
-        }
-        
-        /* ===== CHAPTER TAGS ===== */
-        .chapter-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        
-        .chapter-tag {
-            padding: 0.5rem 1rem;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .chapter-tag:hover {
-            border-color: var(--accent);
-        }
-        
-        .chapter-tag.active {
-            background: var(--accent);
-            color: #000;
-            border-color: var(--accent);
-        }
-        
-        .chapter-tag-count {
-            background: var(--bg-primary);
-            padding: 0.1rem 0.4rem;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            margin-left: 0.25rem;
-        }
-        
-        .chapter-tag.active .chapter-tag-count {
-            background: rgba(0,0,0,0.2);
-        }
-        
-        /* ===== STATS ===== */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .stat-card {
-            background: var(--bg-tertiary);
-            border-radius: 10px;
-            padding: 1rem;
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--accent);
-        }
-        
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: 0.25rem;
-        }
-        
-        /* ===== CHAPTER INPUT ROW ===== */
-        .chapter-input-row {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-        }
-        
-        .chapter-input-name {
-            flex: 1;
-            font-weight: 500;
-        }
-        
-        .chapter-input-available {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-        
-        .chapter-input-field {
-            width: 80px;
-            padding: 0.5rem;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            text-align: center;
-        }
-        
-        .chapter-input-field:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-        
-        /* ===== PREVIEW AREA ===== */
-        .preview-area {
-            background: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            min-height: 400px;
-            margin-bottom: 1rem;
-        }
-        
-        .preview-question {
-            margin-bottom: 15px;
-            page-break-inside: avoid;
-        }
-        
-        .preview-question img {
-            max-width: 100%;
-            height: auto;
-        }
-        
-        /* ===== SETTINGS ===== */
-        .settings-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-        }
-        
-        .settings-info h4 {
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-        }
-        
-        .settings-info p {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-        
-        /* ===== MODAL ===== */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-        
-        .modal-overlay.active {
-            display: flex;
-        }
-        
-        .modal {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            max-width: 500px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            padding: 1.25rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-        
-        .modal-body {
-            padding: 1.25rem;
-        }
-        
-        .modal-footer {
-            padding: 1.25rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 0.5rem;
-            justify-content: flex-end;
-        }
-        
-        /* ===== TOAST ===== */
-        .toast-container {
-            position: fixed;
-            bottom: 1rem;
-            right: 1rem;
-            z-index: 2000;
-        }
-        
-        .toast {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem 1.25rem;
-            margin-top: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            animation: slideIn 0.3s ease;
-            max-width: 350px;
-        }
-        
-        .toast.success { border-left: 3px solid var(--success); }
-        .toast.error { border-left: 3px solid var(--danger); }
-        .toast.info { border-left: 3px solid var(--accent); }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        /* ===== LOADING ===== */
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 3000;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        .loading-overlay.active {
-            display: flex;
-        }
-        
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        /* ===== EMPTY STATE ===== */
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-secondary);
-        }
-        
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-        
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 600px) {
-            .header-content {
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-            
-            .image-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            }
-            
-            .chapter-input-row {
-                flex-wrap: wrap;
-            }
-            
-            .chapter-input-name {
-                width: 100%;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>QBank - Question Bank</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="QBank">
+<meta name="theme-color" content="#0a0c10">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+
+<!-- External Libraries (lazy load) -->
+<script>
+let _jszipLoaded = false, _html2canvasLoaded = false, _jspdfLoaded = false;
+function loadJSZip() {
+  return new Promise((res, rej) => {
+    if (typeof JSZip !== 'undefined') return res();
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    s.onload = () => res();
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+function loadHtml2Canvas() {
+  return new Promise((res, rej) => {
+    if (typeof html2canvas !== 'undefined') return res();
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => res();
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+function loadJsPDF() {
+  return new Promise((res, rej) => {
+    if (typeof jspdf !== 'undefined') return res();
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = () => res();
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0c10;--s1:#111318;--s2:#181b23;--s3:#1e222c;--s4:#252a36;
+  --border:#252a36;--border2:#2e3444;
+  --green:#22c55e;--gdim:rgba(34,197,94,0.09);
+  --amber:#f59e0b;--adim:rgba(245,158,11,0.09);
+  --red:#ef4444;--rdim:rgba(239,68,68,0.09);
+  --blue:#3b82f6;--bdim:rgba(59,130,246,0.09);
+  --cyan:#06b6d4;--cdim:rgba(6,182,212,0.09);
+  --text:#e8eaf0;--t2:#5a6070;--t3:#2e3340;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Plus Jakarta Sans',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);max-width:520px;margin:0 auto;display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+html{overscroll-behavior:none}
+
+/* ── TOPBAR ── */
+.topbar{flex-shrink:0;background:rgba(10,12,16,0.98);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;z-index:50}
+.logo{font-family:var(--mono);font-size:.9rem;font-weight:700;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
+.logo em{color:var(--green);font-style:normal}
+.logo-badge{font-size:.55rem;background:var(--gdim);border:1px solid rgba(34,197,94,.25);color:var(--green);padding:2px 6px;border-radius:4px;font-weight:700;letter-spacing:.06em}
+.tbbtns{display:flex;gap:5px}
+.icon-btn{height:30px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--t2);font-size:.68rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0 9px;font-family:var(--sans);transition:all .15s;white-space:nowrap}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn.g{background:var(--gdim);border-color:rgba(34,197,94,.2);color:var(--green)}
+.icon-btn.b{background:var(--bdim);border-color:rgba(59,130,246,.2);color:var(--blue)}
+.icon-btn.c{background:var(--cdim);border-color:rgba(6,182,212,.2);color:var(--cyan)}
+.icon-btn.a{background:var(--adim);border-color:rgba(245,158,11,.2);color:var(--amber)}
+
+/* ── MAIN + PAGES ── */
+.main{flex:1;overflow:hidden;position:relative}
+.page{display:none;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page.active{display:block}
+.pi{padding:12px}
+
+/* ── BOTTOM NAV ── */
+.bnav{flex-shrink:0;background:rgba(10,12,16,0.98);border-top:1px solid var(--border);display:flex;padding:6px 0 max(16px, env(safe-area-inset-bottom));z-index:50}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0;color:var(--t3);transition:all .15s;position:relative}
+.ni.active{color:var(--green)}
+.ni:active{transform:scale(.87)}
+.ni-icon{font-size:1.05rem;line-height:1}
+.ni-lbl{font-size:.5rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
+.ni-badge{position:absolute;top:1px;right:calc(50% - 14px);width:6px;height:6px;border-radius:50%;background:var(--cyan);display:none}
+.ni-badge.show{display:block}
+
+/* ── COMMON ── */
+.sl{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);margin:14px 0 8px;display:flex;align-items:center;gap:6px}
+.sl::after{content:'';flex:1;height:1px;background:var(--border)}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:13px;padding:13px;margin-bottom:8px}
+.empty{text-align:center;padding:28px 16px;color:var(--t2)}
+.empty-icon{font-size:1.8rem;margin-bottom:8px;opacity:.25}
+.empty-text{font-size:.75rem;line-height:1.7}
+.inp{background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:.88rem;outline:none;width:100%;font-family:var(--sans);transition:border-color .15s}
+.inp:focus{border-color:var(--green)}
+.inp::placeholder{color:var(--t3)}
+.big-btn{width:100%;padding:13px;border-radius:12px;border:none;font-size:.88rem;font-weight:800;cursor:pointer;font-family:var(--sans);transition:all .15s;margin-bottom:7px;letter-spacing:-.01em}
+.big-btn:active{transform:scale(.97)}
+.btn-g{background:var(--green);color:#000}
+.btn-c{background:var(--cyan);color:#000}
+.btn-o{background:transparent;border:1px solid var(--border2);color:var(--t2)}
+
+/* ══════════════ HOME PAGE ══════════════ */
+.hero{background:linear-gradient(135deg,var(--s2),var(--s3));border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;top:-20px;right:-20px;width:90px;height:90px;background:radial-gradient(circle,rgba(34,197,94,.1),transparent 70%)}
+.hero-tag{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--green);margin-bottom:4px}
+.hero-title{font-size:1rem;font-weight:800;margin-bottom:3px}
+.hero-sub{font-size:.7rem;color:var(--t2);line-height:1.55}
+.hero-stats{display:flex;gap:12px;margin-top:10px}
+.hstat{text-align:center;flex:1}
+.hstat-val{font-family:var(--mono);font-size:.95rem;font-weight:700;color:var(--green)}
+.hstat-lbl{font-size:.53rem;color:var(--t2);text-transform:uppercase;letter-spacing:.06em}
+
+/* Chapter cards */
+.ch-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden;animation:fadeUp .25s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.ch-card-hdr{padding:11px 13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:8px}
+.ch-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.ch-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;background:var(--s3)}
+.ch-info{flex:1;min-width:0}
+.ch-name{font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-meta{font-size:.62rem;color:var(--t2);font-family:var(--mono);margin-top:2px}
+.ch-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.ch-pct{font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--green)}
+.mini-bar{width:48px;height:4px;background:var(--border2);border-radius:99px;overflow:hidden}
+.mini-fill{height:100%;border-radius:99px;background:var(--green)}
+
+/* Images grid inside chapter */
+.ch-images{display:none;border-top:1px solid var(--border);padding:10px}
+.ch-card.open .ch-images{display:block}
+.img-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.img-thumb{aspect-ratio:1;border-radius:6px;overflow:hidden;border:2px solid var(--border);cursor:pointer;position:relative;transition:all .15s}
+.img-thumb:active{transform:scale(.92)}
+.img-thumb img{width:100%;height:100%;object-fit:cover}
+.img-thumb.used{opacity:.4}
+.img-thumb.used::after{content:'✓';position:absolute;inset:0;background:rgba(239,68,68,.3);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.8rem}
+.img-thumb.fresh{border-color:var(--green)}
+
+/* ══════════════ UPLOAD PAGE ══════════════ */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s2)}
+.upload-zone:active,.upload-zone.dragover{border-color:var(--green);background:var(--gdim)}
+.upload-zone-icon{font-size:2.5rem;margin-bottom:8px}
+.upload-zone-text{font-size:.85rem;font-weight:600}
+.upload-zone-hint{font-size:.68rem;color:var(--t2);margin-top:4px}
+.preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
+.preview-thumb{aspect-ratio:1;border-radius:6px;overflow:hidden;position:relative}
+.preview-thumb img{width:100%;height:100%;object-fit:cover}
+.preview-remove{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* ══════════════ GENERATE PAGE ══════════════ */
+.paper-config{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:10px}
+.pc-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pc-row:last-child{margin-bottom:0}
+.pc-label{font-size:.72rem;font-weight:600;color:var(--t2)}
+.pc-val{font-family:var(--mono);font-size:.8rem;font-weight:700;color:var(--text)}
+.num-inp{background:var(--s3);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:.82rem;width:65px;text-align:center;outline:none}
+.num-inp:focus{border-color:var(--cyan)}
+select.num-inp{width:auto;font-size:.72rem;text-align:left;padding-right:8px}
+
+/* Chapter distribution */
+.ch-dist-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s3);border-radius:8px;margin-bottom:5px}
+.ch-dist-name{flex:1;font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-dist-avail{font-size:.62rem;color:var(--t2);font-family:var(--mono)}
+.ch-dist-inp{width:50px;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px;color:var(--text);font-family:var(--mono);font-size:.78rem;text-align:center}
+.ch-dist-inp:focus{border-color:var(--cyan)}
+
+/* Generated paper output */
+.gen-paper-wrap{background:var(--s2);border:1px solid var(--border2);border-radius:12px;overflow:hidden;margin-bottom:10px}
+.gp-header{background:var(--s3);padding:12px 14px;border-bottom:1px solid var(--border)}
+.gp-title{font-size:.88rem;font-weight:800;margin-bottom:3px}
+.gp-meta{font-size:.62rem;color:var(--t2);font-family:var(--mono)}
+.gp-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.gp-chip{font-size:.62rem;padding:2px 8px;border-radius:4px;border:1px solid var(--border);color:var(--t2)}
+.gp-chip.fresh{background:var(--gdim);border-color:rgba(34,197,94,.25);color:var(--green)}
+
+/* Paper section blocks */
+.gp-section{border-bottom:1px solid var(--border)}
+.gp-section:last-child{border-bottom:none}
+.gp-sec-head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:var(--s3)}
+.gp-sec-left{display:flex;align-items:center;gap:8px}
+.gp-range{font-family:var(--mono);font-size:.68rem;font-weight:700;color:var(--cyan);background:var(--cdim);border:1px solid rgba(6,182,212,.2);padding:2px 7px;border-radius:4px}
+.gp-ch-name{font-size:.78rem;font-weight:700}
+.gp-chev{color:var(--t2);font-size:.65rem;transition:transform .2s}
+.gp-chev.open{transform:rotate(180deg)}
+.gp-sec-body{display:none;padding:10px}
+.gp-sec-body.open{display:block}
+.gp-img-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.gp-img{aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.gp-img img{width:100%;height:100%;object-fit:cover}
+
+/* Preview canvas area */
+.preview-canvas{background:#fff;border-radius:8px;padding:15px;margin-bottom:10px;min-height:200px}
+.preview-canvas img{max-width:100%;margin-bottom:10px;border-radius:4px}
+
+/* ══════════════ SETTINGS PAGE ══════════════ */
+.set-card{background:var(--s1);border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:7px}
+.set-lbl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t2);margin-bottom:6px}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.set-row:last-child{border-bottom:none}
+.set-info h4{font-size:.82rem;font-weight:600;margin-bottom:2px}
+.set-info p{font-size:.68rem;color:var(--t2)}
+
+/* ══════════════ MODAL ══════════════ */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal-sheet{width:100%;max-width:480px;background:var(--s1);border-radius:18px 18px 0 0;padding:14px 16px calc(34px + env(safe-area-inset-bottom));border-top:1px solid var(--border2);max-height:80vh;overflow-y:auto}
+.modal-handle{width:30px;height:3px;background:var(--border2);border-radius:2px;margin:0 auto 13px}
+.modal-title{font-size:.95rem;font-weight:800;margin-bottom:4px}
+.modal-hint{font-size:.72rem;color:var(--t2);margin-bottom:12px;line-height:1.5}
+.modal-inp{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);font-size:.88rem;outline:none;margin-bottom:8px;transition:border-color .15s;font-family:var(--sans)}
+.modal-inp:focus{border-color:var(--green)}
+.mbtn-row{display:flex;gap:7px;margin-top:6px}
+.mbtn{padding:11px;border-radius:10px;border:none;font-size:.8rem;font-weight:700;cursor:pointer;font-family:var(--sans);flex:1;transition:all .15s}
+.mbtn:active{transform:scale(.95)}
+.mbtn-g{background:var(--green);color:#000}
+.mbtn-c{background:var(--cyan);color:#000}
+.mbtn-ghost{background:var(--s3);color:var(--t2);border:1px solid var(--border)}
+
+/* ══════════════ OVERLAY ══════════════ */
+#dl-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:400;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+#dl-overlay.open{display:flex}
+.dl-spin{width:40px;height:40px;border:3px solid var(--border2);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dl-text{font-size:.8rem;color:var(--text);text-align:center}
+.dl-bar{width:200px;height:5px;background:var(--border);border-radius:99px;overflow:hidden}
+.dl-fill{height:100%;background:var(--cyan);border-radius:99px;transition:width .3s}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:8px 15px;font-size:.74rem;font-weight:600;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap;z-index:500;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.s{border-color:rgba(34,197,94,.35);color:var(--green)}
+.toast.e{border-color:rgba(239,68,68,.35);color:var(--red)}
+.toast.a{border-color:rgba(245,158,11,.35);color:var(--amber)}
+</style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <div class="logo-icon">Q</div>
-                <span class="logo-text">QBank</span>
-            </div>
-            <div class="sync-status" id="syncStatus">
-                <span class="sync-dot" id="syncDot"></span>
-                <span id="syncText">Not Connected</span>
-            </div>
-        </div>
-    </header>
-    
-    <!-- Navigation -->
-    <nav class="nav-tabs">
-        <button class="nav-tab active" data-screen="upload">
-            <span class="nav-tab-icon">📤</span>
-            Upload
-        </button>
-        <button class="nav-tab" data-screen="store">
-            <span class="nav-tab-icon">📁</span>
-            Store Room
-        </button>
-        <button class="nav-tab" data-screen="generate">
-            <span class="nav-tab-icon">🎯</span>
-            Generate
-        </button>
-        <button class="nav-tab" data-screen="settings">
-            <span class="nav-tab-icon">⚙️</span>
-            Settings
-        </button>
-    </nav>
-    
-    <!-- Main Content -->
-    <main class="main-content">
-        
-        <!-- Upload Screen -->
-        <section class="screen active" id="screen-upload">
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <h2 class="card-title">Upload Questions</h2>
-                        <p class="card-subtitle">Add MCQ images to your question bank</p>
-                    </div>
-                </div>
-                
-                <div class="input-group">
-                    <label class="input-label">Select Chapter</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <select class="input" id="uploadChapter" style="flex: 1;">
-                            <option value="">-- Select Chapter --</option>
-                        </select>
-                        <button class="btn btn-secondary" onclick="showAddChapterModal()">+ New</button>
-                    </div>
-                </div>
-                
-                <div class="upload-zone" id="uploadZone">
-                    <div class="upload-zone-icon">📷</div>
-                    <div class="upload-zone-text">Drag & drop images or tap to select</div>
-                    <div class="upload-zone-hint">PNG, JPG supported • Multiple files allowed</div>
-                    <input type="file" id="fileInput" accept="image/*" multiple hidden>
-                </div>
-                
-                <div id="uploadPreview" style="margin-top: 1rem;"></div>
-                
-                <div id="uploadActions" style="margin-top: 1rem; display: none;">
-                    <button class="btn btn-primary" onclick="uploadImages()">
-                        📤 Upload to GitHub
-                    </button>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Store Room Screen -->
-        <section class="screen" id="screen-store">
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <h2 class="card-title">Store Room</h2>
-                        <p class="card-subtitle">Browse your question bank</p>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" onclick="refreshStore()">🔄 Refresh</button>
-                </div>
-                
-                <div class="stats-grid" id="storeStats">
-                    <div class="stat-card">
-                        <div class="stat-value" id="totalQuestions">0</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="usedQuestions">0</div>
-                        <div class="stat-label">Used</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="availableQuestions">0</div>
-                        <div class="stat-label">Available</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="totalChapters">0</div>
-                        <div class="stat-label">Chapters</div>
-                    </div>
-                </div>
-                
-                <div class="chapter-tags" id="chapterTags">
-                    <span class="chapter-tag active" data-chapter="all">All</span>
-                </div>
-                
-                <div class="image-grid" id="storeGrid"></div>
-            </div>
-        </section>
-        
-        <!-- Generate Screen -->
-        <section class="screen" id="screen-generate">
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <h2 class="card-title">🎯 Test Generator</h2>
-                        <p class="card-subtitle">Select questions per chapter</p>
-                    </div>
-                </div>
-                
-                <div id="chapterInputs"></div>
-                
-                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Total Questions:</span>
-                        <span id="totalSelected" style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">0</span>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <button class="btn btn-primary" onclick="generateTest()" style="flex: 1;">
-                        🎯 Generate Test
-                    </button>
-                </div>
-            </div>
-            
-            <div class="card" id="previewCard" style="display: none;">
-                <div class="card-header">
-                    <div>
-                        <h2 class="card-title">Preview</h2>
-                        <p class="card-subtitle">Test paper ready</p>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="downloadPNG()">📷 PNG</button>
-                        <button class="btn btn-sm btn-primary" onclick="downloadPDF()">📄 PDF</button>
-                    </div>
-                </div>
-                <div class="preview-area" id="previewArea"></div>
-            </div>
-        </section>
-        
-        <!-- Settings Screen -->
-        <section class="screen" id="screen-settings">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">⚙️ Settings</h2>
-                </div>
-                
-                <div class="settings-row">
-                    <div class="settings-info">
-                        <h4>GitHub Token</h4>
-                        <p>Required for syncing with GitHub</p>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" onclick="showTokenModal()">
-                        Configure
-                    </button>
-                </div>
-                
-                <div class="settings-row">
-                    <div class="settings-info">
-                        <h4>Manage Chapters</h4>
-                        <p>Add, edit or delete chapters</p>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" onclick="showChaptersModal()">
-                        Manage
-                    </button>
-                </div>
-                
-                <div class="settings-row">
-                    <div class="settings-info">
-                        <h4>Reset All Used</h4>
-                        <p>Mark all questions as unused</p>
-                    </div>
-                    <button class="btn btn-sm btn-danger" onclick="resetAllUsed()">
-                        Reset
-                    </button>
-                </div>
-                
-                <div class="settings-row">
-                    <div class="settings-info">
-                        <h4>Export Data</h4>
-                        <p>Download tracker JSON</p>
-                    </div>
-                    <button class="btn btn-sm btn-secondary" onclick="exportData()">
-                        Export
-                    </button>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">ℹ️ About</h2>
-                </div>
-                <p style="color: var(--text-secondary); line-height: 1.6;">
-                    <strong>QBank</strong> - Question Bank + Auto Test Generator<br><br>
-                    GitHub: rohanapatel121212-debug/qbank<br>
-                    Version: 1.0.0
-                </p>
-            </div>
-        </section>
-    </main>
-    
-    <!-- Modals -->
-    <div class="modal-overlay" id="tokenModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">GitHub Configuration</h3>
-                <button class="modal-close" onclick="closeModal('tokenModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="input-group">
-                    <label class="input-label">GitHub Token</label>
-                    <input type="password" class="input" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
-                </div>
-                <p style="font-size: 0.85rem; color: var(--text-secondary);">
-                    Token needs 'repo' scope. Get from: GitHub → Settings → Developer settings → Personal access tokens
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('tokenModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="saveToken()">Save & Connect</button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="modal-overlay" id="chapterModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Add Chapter</h3>
-                <button class="modal-close" onclick="closeModal('chapterModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="input-group">
-                    <label class="input-label">Chapter Name</label>
-                    <input type="text" class="input" id="newChapterName" placeholder="e.g. Fractions">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('chapterModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="addChapter()">Add Chapter</button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="modal-overlay" id="manageChaptersModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Manage Chapters</h3>
-                <button class="modal-close" onclick="closeModal('manageChaptersModal')">&times;</button>
-            </div>
-            <div class="modal-body" id="manageChaptersList"></div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" onclick="closeModal('manageChaptersModal')">Done</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-    
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner"></div>
-        <div id="loadingText">Loading...</div>
-    </div>
 
-    <script>
-        // ===== APP CONFIG =====
-        const APP_CONFIG = {
-            APP_NAME: 'QBank',
-            GH_OWNER: 'rohanapatel121212-debug',
-            GH_REPO: 'qbank',
-            GH_BRANCH: 'main',
-            IMAGES_PATH: 'images',
-            TRACKER_FILE: 'qbank_tracker.json',
-            DB_NAME: 'QBankDB'
-        };
-        
-        // ===== STATE =====
-        let state = {
-            token: '',
-            chapters: [],
-            questions: {},  // { chapter: [{ id, filename, url, used }] }
-            pendingUploads: [],
-            currentFilter: 'all'
-        };
-        
-        // ===== INIT =====
-        document.addEventListener('DOMContentLoaded', () => {
-            loadLocalState();
-            initNavigation();
-            initUploadZone();
-            updateUI();
-        });
-        
-        // ===== NAVIGATION =====
-        function initNavigation() {
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const screen = tab.dataset.screen;
-                    switchScreen(screen);
-                });
-            });
-        }
-        
-        function switchScreen(screenId) {
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[data-screen="${screenId}"]`).classList.add('active');
-            
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(`screen-${screenId}`).classList.add('active');
-            
-            if (screenId === 'store') refreshStore();
-            if (screenId === 'generate') updateGenerateScreen();
-        }
-        
-        // ===== UPLOAD ZONE =====
-        function initUploadZone() {
-            const zone = document.getElementById('uploadZone');
-            const input = document.getElementById('fileInput');
-            
-            zone.addEventListener('click', () => input.click());
-            
-            zone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                zone.classList.add('dragover');
-            });
-            
-            zone.addEventListener('dragleave', () => {
-                zone.classList.remove('dragover');
-            });
-            
-            zone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                zone.classList.remove('dragover');
-                handleFiles(e.dataTransfer.files);
-            });
-            
-            input.addEventListener('change', (e) => {
-                handleFiles(e.target.files);
-            });
-        }
-        
-        function handleFiles(files) {
-            state.pendingUploads = [];
-            const preview = document.getElementById('uploadPreview');
-            preview.innerHTML = '';
-            
-            const grid = document.createElement('div');
-            grid.className = 'image-grid';
-            
-            Array.from(files).forEach((file, idx) => {
-                if (!file.type.startsWith('image/')) return;
-                
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    state.pendingUploads.push({
-                        name: file.name,
-                        data: e.target.result,
-                        file: file
-                    });
-                    
-                    const card = document.createElement('div');
-                    card.className = 'image-card';
-                    card.innerHTML = `<img src="${e.target.result}" alt="${file.name}">`;
-                    grid.appendChild(card);
-                    
-                    document.getElementById('uploadActions').style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            });
-            
-            preview.appendChild(grid);
-        }
-        
-        async function uploadImages() {
-            const chapter = document.getElementById('uploadChapter').value;
-            if (!chapter) {
-                showToast('Please select a chapter', 'error');
-                return;
-            }
-            
-            if (!state.token) {
-                showToast('Please configure GitHub token first', 'error');
-                switchScreen('settings');
-                return;
-            }
-            
-            if (state.pendingUploads.length === 0) {
-                showToast('No images to upload', 'error');
-                return;
-            }
-            
-            showLoading('Uploading images...');
-            
-            try {
-                for (let i = 0; i < state.pendingUploads.length; i++) {
-                    const upload = state.pendingUploads[i];
-                    const timestamp = Date.now();
-                    const ext = upload.name.split('.').pop();
-                    const filename = `${chapter}_${timestamp}_${i}.${ext}`;
-                    const path = `${APP_CONFIG.IMAGES_PATH}/${chapter}/${filename}`;
-                    
-                    updateLoading(`Uploading ${i + 1}/${state.pendingUploads.length}...`);
-                    
-                    // Upload to GitHub
-                    const base64 = upload.data.split(',')[1];
-                    await uploadToGitHub(path, base64);
-                    
-                    // Add to state
-                    if (!state.questions[chapter]) {
-                        state.questions[chapter] = [];
-                    }
-                    
-                    state.questions[chapter].push({
-                        id: `${chapter}_${timestamp}_${i}`,
-                        filename: filename,
-                        url: `https://raw.githubusercontent.com/${APP_CONFIG.GH_OWNER}/${APP_CONFIG.GH_REPO}/${APP_CONFIG.GH_BRANCH}/${path}`,
-                        used: false
-                    });
-                }
-                
-                // Save tracker
-                await saveTracker();
-                saveLocalState();
-                
-                // Clear
-                state.pendingUploads = [];
-                document.getElementById('uploadPreview').innerHTML = '';
-                document.getElementById('uploadActions').style.display = 'none';
-                document.getElementById('fileInput').value = '';
-                
-                hideLoading();
-                showToast(`Uploaded ${state.pendingUploads.length || 'all'} images successfully!`, 'success');
-                updateUI();
-                
-            } catch (error) {
-                hideLoading();
-                showToast('Upload failed: ' + error.message, 'error');
-                console.error(error);
-            }
-        }
-        
-        // ===== GITHUB API =====
-        async function uploadToGitHub(path, base64Content) {
-            const url = `https://api.github.com/repos/${APP_CONFIG.GH_OWNER}/${APP_CONFIG.GH_REPO}/contents/${path}`;
-            
-            const response = await fetch(url, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `token ${state.token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: `Add question image: ${path}`,
-                    content: base64Content,
-                    branch: APP_CONFIG.GH_BRANCH
-                })
-            });
-            
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.message || 'GitHub upload failed');
-            }
-            
-            return await response.json();
-        }
-        
-        async function saveTracker() {
-            const data = {
-                chapters: state.chapters,
-                questions: state.questions,
-                lastUpdated: new Date().toISOString()
-            };
-            
-            const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-            const path = APP_CONFIG.TRACKER_FILE;
-            const url = `https://api.github.com/repos/${APP_CONFIG.GH_OWNER}/${APP_CONFIG.GH_REPO}/contents/${path}`;
-            
-            // Get existing file SHA if exists
-            let sha = null;
-            try {
-                const existing = await fetch(url, {
-                    headers: { 'Authorization': `token ${state.token}` }
-                });
-                if (existing.ok) {
-                    const data = await existing.json();
-                    sha = data.sha;
-                }
-            } catch (e) {}
-            
-            const body = {
-                message: 'Update QBank tracker',
-                content: content,
-                branch: APP_CONFIG.GH_BRANCH
-            };
-            if (sha) body.sha = sha;
-            
-            const response = await fetch(url, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `token ${state.token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(body)
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to save tracker');
-            }
-        }
-        
-        async function loadTracker() {
-            if (!state.token) return;
-            
-            const url = `https://api.github.com/repos/${APP_CONFIG.GH_OWNER}/${APP_CONFIG.GH_REPO}/contents/${APP_CONFIG.TRACKER_FILE}`;
-            
-            try {
-                const response = await fetch(url, {
-                    headers: { 'Authorization': `token ${state.token}` }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const content = JSON.parse(decodeURIComponent(escape(atob(data.content))));
-                    state.chapters = content.chapters || [];
-                    state.questions = content.questions || {};
-                    saveLocalState();
-                    updateUI();
-                    updateSyncStatus('connected');
-                }
-            } catch (error) {
-                console.error('Failed to load tracker:', error);
-            }
-        }
-        
-        // ===== LOCAL STORAGE =====
-        function saveLocalState() {
-            localStorage.setItem('qbank_state', JSON.stringify({
-                token: state.token,
-                chapters: state.chapters,
-                questions: state.questions
-            }));
-        }
-        
-        function loadLocalState() {
-            const saved = localStorage.getItem('qbank_state');
-            if (saved) {
-                const data = JSON.parse(saved);
-                state.token = data.token || '';
-                state.chapters = data.chapters || [];
-                state.questions = data.questions || {};
-            }
-            
-            if (state.token) {
-                updateSyncStatus('connected');
-                loadTracker();
-            }
-        }
-        
-        // ===== UI UPDATES =====
-        function updateUI() {
-            updateChapterDropdown();
-            updateChapterTags();
-            updateStats();
-        }
-        
-        function updateChapterDropdown() {
-            const select = document.getElementById('uploadChapter');
-            select.innerHTML = '<option value="">-- Select Chapter --</option>';
-            state.chapters.forEach(ch => {
-                select.innerHTML += `<option value="${ch}">${ch}</option>`;
-            });
-        }
-        
-        function updateChapterTags() {
-            const container = document.getElementById('chapterTags');
-            let html = '<span class="chapter-tag active" data-chapter="all" onclick="filterByChapter(\'all\')">All</span>';
-            
-            state.chapters.forEach(ch => {
-                const count = (state.questions[ch] || []).length;
-                html += `<span class="chapter-tag" data-chapter="${ch}" onclick="filterByChapter('${ch}')">
-                    ${ch}<span class="chapter-tag-count">${count}</span>
-                </span>`;
-            });
-            
-            container.innerHTML = html;
-        }
-        
-        function updateStats() {
-            let total = 0, used = 0;
-            
-            Object.values(state.questions).forEach(qs => {
-                total += qs.length;
-                used += qs.filter(q => q.used).length;
-            });
-            
-            document.getElementById('totalQuestions').textContent = total;
-            document.getElementById('usedQuestions').textContent = used;
-            document.getElementById('availableQuestions').textContent = total - used;
-            document.getElementById('totalChapters').textContent = state.chapters.length;
-        }
-        
-        function filterByChapter(chapter) {
-            state.currentFilter = chapter;
-            
-            document.querySelectorAll('.chapter-tag').forEach(t => {
-                t.classList.toggle('active', t.dataset.chapter === chapter);
-            });
-            
-            renderStoreGrid();
-        }
-        
-        function refreshStore() {
-            if (state.token) {
-                showLoading('Syncing...');
-                loadTracker().then(() => {
-                    hideLoading();
-                    renderStoreGrid();
-                });
-            } else {
-                renderStoreGrid();
-            }
-        }
-        
-        function renderStoreGrid() {
-            const grid = document.getElementById('storeGrid');
-            let questions = [];
-            
-            if (state.currentFilter === 'all') {
-                Object.entries(state.questions).forEach(([ch, qs]) => {
-                    qs.forEach(q => questions.push({ ...q, chapter: ch }));
-                });
-            } else {
-                questions = (state.questions[state.currentFilter] || []).map(q => ({
-                    ...q, chapter: state.currentFilter
-                }));
-            }
-            
-            if (questions.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1;">
-                        <div class="empty-state-icon">📭</div>
-                        <p>No questions yet</p>
-                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Upload some images to get started</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            grid.innerHTML = questions.map(q => `
-                <div class="image-card ${q.used ? 'used' : ''}" onclick="toggleUsed('${q.chapter}', '${q.id}')">
-                    <img src="${q.url}" alt="${q.filename}" loading="lazy">
-                    <span class="image-card-badge ${q.used ? 'used' : 'available'}">
-                        ${q.used ? 'Used' : 'Available'}
-                    </span>
-                </div>
-            `).join('');
-        }
-        
-        function toggleUsed(chapter, id) {
-            const q = state.questions[chapter].find(q => q.id === id);
-            if (q) {
-                q.used = !q.used;
-                saveLocalState();
-                saveTracker().catch(console.error);
-                renderStoreGrid();
-                updateStats();
-            }
-        }
-        
-        // ===== GENERATE SCREEN =====
-        function updateGenerateScreen() {
-            const container = document.getElementById('chapterInputs');
-            
-            if (state.chapters.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📚</div>
-                        <p>No chapters yet</p>
-                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Add chapters and upload questions first</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = state.chapters.map(ch => {
-                const total = (state.questions[ch] || []).length;
-                const available = (state.questions[ch] || []).filter(q => !q.used).length;
-                
-                return `
-                    <div class="chapter-input-row">
-                        <span class="chapter-input-name">${ch}</span>
-                        <span class="chapter-input-available">${available}/${total} available</span>
-                        <input type="number" class="chapter-input-field" 
-                            id="gen-${ch}" min="0" max="${available}" value="0"
-                            onchange="updateTotalSelected()">
-                    </div>
-                `;
-            }).join('');
-            
-            updateTotalSelected();
-        }
-        
-        function updateTotalSelected() {
-            let total = 0;
-            state.chapters.forEach(ch => {
-                const input = document.getElementById(`gen-${ch}`);
-                if (input) total += parseInt(input.value) || 0;
-            });
-            document.getElementById('totalSelected').textContent = total;
-        }
-        
-        async function generateTest() {
-            const selections = {};
-            let totalSelected = 0;
-            
-            state.chapters.forEach(ch => {
-                const input = document.getElementById(`gen-${ch}`);
-                const count = parseInt(input?.value) || 0;
-                if (count > 0) {
-                    selections[ch] = count;
-                    totalSelected += count;
-                }
-            });
-            
-            if (totalSelected === 0) {
-                showToast('Please select at least 1 question', 'error');
-                return;
-            }
-            
-            showLoading('Generating test...');
-            
-            // Pick unused questions
-            const selectedQuestions = [];
-            
-            for (const [chapter, count] of Object.entries(selections)) {
-                const available = (state.questions[chapter] || []).filter(q => !q.used);
-                
-                if (available.length < count) {
-                    hideLoading();
-                    const reset = confirm(`${chapter}: Only ${available.length} available, need ${count}. Reset used questions?`);
-                    if (reset) {
-                        state.questions[chapter].forEach(q => q.used = false);
-                        saveLocalState();
-                    }
-                    return generateTest(); // Retry
-                }
-                
-                // Shuffle and pick
-                const shuffled = [...available].sort(() => Math.random() - 0.5);
-                const picked = shuffled.slice(0, count);
-                
-                picked.forEach(q => {
-                    selectedQuestions.push({ ...q, chapter });
-                    // Mark as used
-                    const orig = state.questions[chapter].find(oq => oq.id === q.id);
-                    if (orig) orig.used = true;
-                });
-            }
-            
-            // Save used status
-            saveLocalState();
-            saveTracker().catch(console.error);
-            
-            // Render preview
-            await renderPreview(selectedQuestions);
-            
-            hideLoading();
-            document.getElementById('previewCard').style.display = 'block';
-            updateStats();
-            updateGenerateScreen();
-        }
-        
-        async function renderPreview(questions) {
-            const preview = document.getElementById('previewArea');
-            preview.innerHTML = '';
-            
-            for (let i = 0; i < questions.length; i++) {
-                const q = questions[i];
-                const div = document.createElement('div');
-                div.className = 'preview-question';
-                
-                const img = new Image();
-                img.src = q.url;
-                img.style.maxWidth = '100%';
-                img.crossOrigin = 'anonymous';
-                
-                await new Promise(resolve => {
-                    img.onload = resolve;
-                    img.onerror = resolve;
-                });
-                
-                div.appendChild(img);
-                preview.appendChild(div);
-            }
-        }
-        
-        async function downloadPNG() {
-            showLoading('Creating PNG...');
-            
-            try {
-                const preview = document.getElementById('previewArea');
-                const canvas = await html2canvas(preview, {
-                    backgroundColor: '#ffffff',
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true
-                });
-                
-                const link = document.createElement('a');
-                link.download = `QBank_Test_${Date.now()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                
-                hideLoading();
-                showToast('PNG downloaded!', 'success');
-            } catch (error) {
-                hideLoading();
-                showToast('PNG generation failed', 'error');
-                console.error(error);
-            }
-        }
-        
-        async function downloadPDF() {
-            showLoading('Creating PDF...');
-            
-            try {
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const preview = document.getElementById('previewArea');
-                
-                const canvas = await html2canvas(preview, {
-                    backgroundColor: '#ffffff',
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true
-                });
-                
-                const imgData = canvas.toDataURL('image/png');
-                const imgWidth = 190;
-                const pageHeight = 277;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 10;
-                
-                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                
-                while (heightLeft > 0) {
-                    position = heightLeft - imgHeight + 10;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-                
-                pdf.save(`QBank_Test_${Date.now()}.pdf`);
-                
-                hideLoading();
-                showToast('PDF downloaded!', 'success');
-            } catch (error) {
-                hideLoading();
-                showToast('PDF generation failed', 'error');
-                console.error(error);
-            }
-        }
-        
-        // ===== MODALS =====
-        function showTokenModal() {
-            document.getElementById('ghToken').value = state.token;
-            document.getElementById('tokenModal').classList.add('active');
-        }
-        
-        function showAddChapterModal() {
-            document.getElementById('newChapterName').value = '';
-            document.getElementById('chapterModal').classList.add('active');
-        }
-        
-        function showChaptersModal() {
-            const list = document.getElementById('manageChaptersList');
-            
-            if (state.chapters.length === 0) {
-                list.innerHTML = '<p style="color: var(--text-secondary);">No chapters yet</p>';
-            } else {
-                list.innerHTML = state.chapters.map(ch => {
-                    const count = (state.questions[ch] || []).length;
-                    const used = (state.questions[ch] || []).filter(q => q.used).length;
-                    
-                    return `
-                        <div class="settings-row">
-                            <div class="settings-info">
-                                <h4>${ch}</h4>
-                                <p>${count} questions • ${used} used</p>
-                            </div>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-sm btn-secondary" onclick="resetChapter('${ch}')">Reset</button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteChapter('${ch}')">Delete</button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-            
-            document.getElementById('manageChaptersModal').classList.add('active');
-        }
-        
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
-        }
-        
-        async function saveToken() {
-            const token = document.getElementById('ghToken').value.trim();
-            if (!token) {
-                showToast('Please enter a token', 'error');
-                return;
-            }
-            
-            state.token = token;
-            saveLocalState();
-            closeModal('tokenModal');
-            
-            showLoading('Connecting...');
-            await loadTracker();
-            hideLoading();
-            
-            showToast('Connected to GitHub!', 'success');
-        }
-        
-        function addChapter() {
-            const name = document.getElementById('newChapterName').value.trim();
-            if (!name) {
-                showToast('Please enter chapter name', 'error');
-                return;
-            }
-            
-            if (state.chapters.includes(name)) {
-                showToast('Chapter already exists', 'error');
-                return;
-            }
-            
-            state.chapters.push(name);
-            state.questions[name] = [];
-            saveLocalState();
-            
-            if (state.token) {
-                saveTracker().catch(console.error);
-            }
-            
-            closeModal('chapterModal');
-            updateUI();
-            showToast(`Chapter "${name}" added!`, 'success');
-        }
-        
-        function resetChapter(chapter) {
-            if (!confirm(`Reset all questions in "${chapter}" to unused?`)) return;
-            
-            (state.questions[chapter] || []).forEach(q => q.used = false);
-            saveLocalState();
-            
-            if (state.token) {
-                saveTracker().catch(console.error);
-            }
-            
-            showToast(`${chapter} reset!`, 'success');
-            showChaptersModal();
-            updateStats();
-        }
-        
-        function deleteChapter(chapter) {
-            if (!confirm(`Delete "${chapter}" and all its questions? This cannot be undone.`)) return;
-            
-            state.chapters = state.chapters.filter(c => c !== chapter);
-            delete state.questions[chapter];
-            saveLocalState();
-            
-            if (state.token) {
-                saveTracker().catch(console.error);
-            }
-            
-            showToast(`${chapter} deleted!`, 'success');
-            showChaptersModal();
-            updateUI();
-        }
-        
-        function resetAllUsed() {
-            if (!confirm('Reset ALL questions to unused?')) return;
-            
-            Object.values(state.questions).forEach(qs => {
-                qs.forEach(q => q.used = false);
-            });
-            
-            saveLocalState();
-            
-            if (state.token) {
-                saveTracker().catch(console.error);
-            }
-            
-            showToast('All questions reset!', 'success');
-            updateStats();
-            updateGenerateScreen();
-        }
-        
-        function exportData() {
-            const data = {
-                chapters: state.chapters,
-                questions: state.questions,
-                exportedAt: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.download = `qbank_export_${Date.now()}.json`;
-            link.href = URL.createObjectURL(blob);
-            link.click();
-            
-            showToast('Data exported!', 'success');
-        }
-        
-        // ===== SYNC STATUS =====
-        function updateSyncStatus(status) {
-            const dot = document.getElementById('syncDot');
-            const text = document.getElementById('syncText');
-            
-            dot.className = 'sync-dot ' + status;
-            
-            switch(status) {
-                case 'connected':
-                    text.textContent = 'Connected';
-                    break;
-                case 'syncing':
-                    text.textContent = 'Syncing...';
-                    break;
-                case 'error':
-                    text.textContent = 'Sync Error';
-                    break;
-                default:
-                    text.textContent = 'Not Connected';
-            }
-        }
-        
-        // ===== TOAST =====
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `<span>${message}</span>`;
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-        
-        // ===== LOADING =====
-        function showLoading(text = 'Loading...') {
-            document.getElementById('loadingText').textContent = text;
-            document.getElementById('loadingOverlay').classList.add('active');
-        }
-        
-        function updateLoading(text) {
-            document.getElementById('loadingText').textContent = text;
-        }
-        
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.remove('active');
-        }
-        
-        // ===== SERVICE WORKER =====
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => {
-                        console.log('SW registered:', reg.scope);
-                        
-                        // Check for updates
-                        reg.addEventListener('updatefound', () => {
-                            const newWorker = reg.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    showToast('App update available! Refresh to update.', 'info');
-                                }
-                            });
-                        });
-                    })
-                    .catch(err => console.log('SW registration failed:', err));
-            });
-            
-            // Listen for sync messages
-            navigator.serviceWorker.addEventListener('message', event => {
-                if (event.data.type === 'SYNC_COMPLETE') {
-                    showToast('Offline changes synced!', 'success');
-                }
-            });
-        }
-        
-        // ===== INSTALL PROMPT =====
-        let deferredPrompt;
-        
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            showInstallBanner();
-        });
-        
-        function showInstallBanner() {
-            // Check if already installed
-            if (window.matchMedia('(display-mode: standalone)').matches) return;
-            
-            const banner = document.createElement('div');
-            banner.id = 'installBanner';
-            banner.innerHTML = `
-                <div style="position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(135deg, var(--accent), #00a080); padding: 1rem; display: flex; align-items: center; justify-content: space-between; z-index: 2000; box-shadow: 0 -5px 20px rgba(0,0,0,0.3);">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <img src="icon-192.png" alt="QBank" style="width: 40px; height: 40px; border-radius: 10px;">
-                        <div>
-                            <div style="font-weight: 600; color: #000;">Install QBank</div>
-                            <div style="font-size: 0.8rem; color: rgba(0,0,0,0.7);">Add to Home Screen</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button onclick="dismissInstall()" style="padding: 0.5rem 1rem; background: transparent; border: 1px solid rgba(0,0,0,0.3); border-radius: 6px; color: #000; cursor: pointer;">Later</button>
-                        <button onclick="installApp()" style="padding: 0.5rem 1rem; background: #000; border: none; border-radius: 6px; color: var(--accent); cursor: pointer; font-weight: 600;">Install</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(banner);
-        }
-        
-        async function installApp() {
-            if (!deferredPrompt) return;
-            
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            
-            if (outcome === 'accepted') {
-                showToast('App installed! 🎉', 'success');
-            }
-            
-            deferredPrompt = null;
-            dismissInstall();
-        }
-        
-        function dismissInstall() {
-            const banner = document.getElementById('installBanner');
-            if (banner) banner.remove();
-        }
-        
-        // iOS Install Instructions
-        function isIOS() {
-            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        }
-        
-        function isInStandaloneMode() {
-            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-        }
-        
-        if (isIOS() && !isInStandaloneMode()) {
-            setTimeout(() => {
-                showToast('Tap Share ↑ then "Add to Home Screen" to install', 'info');
-            }, 3000);
-        }
-    </script>
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">Q<em>Bank</em> <span class="logo-badge">v2</span></div>
+  <div class="tbbtns">
+    <button class="icon-btn g" onclick="saveToGithub()">↑ Save</button>
+    <button class="icon-btn b" onclick="loadFromGithub()">↓ Sync</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ══════ HOME ══════ -->
+<div class="page active" id="page-home">
+<div class="pi">
+  <div class="hero">
+    <div class="hero-tag">Question Bank</div>
+    <div class="hero-title">QBank 📚</div>
+    <div class="hero-sub">MCQ images store karo • Auto test generate karo • Instant download</div>
+    <div class="hero-stats">
+      <div class="hstat"><div class="hstat-val" id="h-total">0</div><div class="hstat-lbl">Total Qs</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-used">0</div><div class="hstat-lbl">Used</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-fresh">0</div><div class="hstat-lbl">Fresh</div></div>
+      <div class="hstat"><div class="hstat-val" id="h-chapters">0</div><div class="hstat-lbl">Chapters</div></div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div class="sl" style="flex:1;margin:0 0 9px;">Chapters</div>
+    <button class="icon-btn c" onclick="openModal('addChapter')" style="margin-bottom:9px;margin-left:10px;">＋ Chapter</button>
+  </div>
+
+  <div id="chapters-list"></div>
+  
+  <button class="big-btn btn-c" onclick="showPage('generate')">⚡ Test Generator</button>
+</div>
+</div>
+
+<!-- ══════ UPLOAD ══════ -->
+<div class="page" id="page-upload">
+<div class="pi">
+  <div class="sl" style="margin-top:4px;">Upload Questions</div>
+  
+  <div class="card">
+    <div class="set-lbl">Select Chapter</div>
+    <div style="display:flex;gap:6px;">
+      <select class="inp" id="uploadChapter" style="flex:1;"></select>
+      <button class="icon-btn c" onclick="openModal('addChapter')">+ New</button>
+    </div>
+  </div>
+  
+  <div class="upload-zone" id="uploadZone">
+    <div class="upload-zone-icon">📷</div>
+    <div class="upload-zone-text">Tap to select images</div>
+    <div class="upload-zone-hint">PNG, JPG • Multiple files</div>
+    <input type="file" id="fileInput" accept="image/*" multiple hidden>
+  </div>
+  
+  <div id="uploadPreview"></div>
+  
+  <div id="uploadActions" style="margin-top:12px;display:none;">
+    <button class="big-btn btn-g" onclick="uploadImages()">📤 Upload to GitHub</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════ GENERATE ══════ -->
+<div class="page" id="page-generate">
+<div class="pi">
+  <div class="sl" style="margin-top:4px;">⚡ Test Generator</div>
+  
+  <!-- Config -->
+  <div class="paper-config">
+    <div class="pc-row">
+      <span class="pc-label">Total Questions</span>
+      <input class="num-inp" id="paperQ" type="number" value="" placeholder="?" min="1" max="200" oninput="updateDistTotal()">
+    </div>
+    <div class="pc-row">
+      <span class="pc-label">Priority Mode</span>
+      <select class="num-inp" id="paperMode" onchange="onModeChange()">
+        <option value="fresh">🟢 Fresh First</option>
+        <option value="balanced">⚖ Balanced</option>
+        <option value="all_equal">📊 All Equal</option>
+        <option value="custom">🎛 Custom</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Chapter Distribution -->
+  <div id="chDistSection">
+    <div class="sl">
+      Chapter Distribution
+      <span id="dist-total-badge" style="font-size:.6rem;padding:2px 8px;border-radius:4px;background:var(--gdim);color:var(--green);font-weight:700;letter-spacing:0;text-transform:none;margin-left:4px;">0/0</span>
+      <button class="icon-btn" onclick="resetChDist()" style="margin-left:auto;height:22px;font-size:.58rem;">↺ Auto</button>
+    </div>
+    <div id="ch-dist-editor"></div>
+  </div>
+
+  <button class="big-btn btn-c" onclick="generatePaper()" style="margin-top:10px;">⚡ Generate Test</button>
+
+  <!-- Output -->
+  <div id="paperOutput" style="display:none;margin-top:12px;">
+    <div class="sl">Generated Paper</div>
+    <div id="paperContent"></div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px;">
+      <button class="big-btn btn-c" style="margin:0;font-size:.75rem;" onclick="downloadImages()">🖼 Images</button>
+      <button class="big-btn" style="margin:0;font-size:.75rem;background:var(--cyan);color:#000;" onclick="downloadZip()">🗜 ZIP</button>
+    </div>
+    <button class="big-btn" style="background:var(--red);color:#fff;font-size:.75rem;" onclick="downloadPDF()">📄 PDF (Claude ke liye)</button>
+    <button class="big-btn btn-g" onclick="markPaperDone()">✓ Mark Done & Save</button>
+    <button class="big-btn btn-o" onclick="generatePaper()">↺ Regenerate</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════ SETTINGS ══════ -->
+<div class="page" id="page-settings">
+<div class="pi">
+  <div class="sl" style="margin-top:4px;">GitHub Config</div>
+
+  <div class="set-card" style="background:rgba(6,182,212,.05);border-color:rgba(6,182,212,.15);">
+    <div style="font-size:.62rem;color:var(--cyan);font-weight:700;margin-bottom:6px;">📌 Repo</div>
+    <div style="font-family:var(--mono);font-size:.78rem;color:var(--t2);" id="repoDisplay">Not configured</div>
+  </div>
+
+  <div class="set-card">
+    <div class="set-lbl">GitHub Owner</div>
+    <input class="inp" id="ghOwner" placeholder="rohanapatel121212-debug">
+  </div>
+  
+  <div class="set-card">
+    <div class="set-lbl">GitHub Repo</div>
+    <input class="inp" id="ghRepo" placeholder="qbank">
+  </div>
+
+  <div class="set-card">
+    <div class="set-lbl">Personal Access Token <span style="color:var(--red);">*</span></div>
+    <input class="inp" id="ghToken" type="password" placeholder="ghp_xxxxxxxxxxxx">
+    <div style="font-size:.6rem;color:var(--t2);margin-top:6px;line-height:1.7;">
+      GitHub → Settings → Developer settings → Personal access tokens → Generate → <b style="color:var(--green);">repo</b> tick karo
+    </div>
+  </div>
+
+  <button class="big-btn btn-g" onclick="saveSettings()">✓ Save & Connect</button>
+  
+  <div class="sl" style="margin-top:16px;">Data Management</div>
+  
+  <div class="set-card">
+    <div class="set-row">
+      <div class="set-info">
+        <h4>Reset All Used</h4>
+        <p>Mark all questions as fresh</p>
+      </div>
+      <button class="icon-btn" style="background:var(--rdim);border-color:rgba(239,68,68,.2);color:var(--red);" onclick="resetAllUsed()">Reset</button>
+    </div>
+    <div class="set-row">
+      <div class="set-info">
+        <h4>Export Data</h4>
+        <p>Download tracker JSON</p>
+      </div>
+      <button class="icon-btn" onclick="exportData()">Export</button>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- /main -->
+
+<!-- BOTTOM NAV -->
+<div class="bnav" id="bnav">
+  <div class="ni active" onclick="showPage('home')"><div class="ni-icon">📚</div><div class="ni-lbl">Home</div></div>
+  <div class="ni" onclick="showPage('upload')"><div class="ni-icon">📤</div><div class="ni-lbl">Upload</div></div>
+  <div class="ni" onclick="showPage('generate');renderChDistEditor()"><div class="ni-icon">⚡</div><div class="ni-lbl">Generate</div><div class="ni-badge" id="nb-paper"></div></div>
+  <div class="ni" onclick="showPage('settings')"><div class="ni-icon">⚙️</div><div class="ni-lbl">Settings</div></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="mTitle"></div>
+    <div class="modal-hint" id="mHint"></div>
+    <div id="mBody"></div>
+    <div class="mbtn-row">
+      <button class="mbtn mbtn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="mbtn mbtn-g" onclick="confirmModal()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div id="dl-overlay">
+  <div class="dl-spin"></div>
+  <div class="dl-text" id="dl-text">Loading...</div>
+  <div class="dl-bar"><div class="dl-fill" id="dl-fill" style="width:0%"></div></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════
+const APP_CONFIG = {
+  TRACKER_FILE: 'qbank_tracker.json',
+  IMAGES_PATH: 'images',
+  DB_NAME: 'QBankDB'
+};
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let data = { chapters: [], questions: {}, history: [] };
+let chDist = {};           // manual chapter distribution
+let currentPaper = null;   // generated paper
+let modalMode = null;
+let pendingUploads = [];
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+window.onload = () => {
+  loadSettings();
+  loadLocalData();
+  const s = getS();
+  if (s.token && s.owner && s.repo) {
+    showOverlay('GitHub se sync ho raha hai...');
+    loadFromGithub().finally(() => {
+      hideOverlay();
+      renderHome();
+    });
+  } else {
+    renderHome();
+    showPage('settings');
+    showToast('Pehle GitHub settings configure karo ⚙️', 'a');
+  }
+  initUploadZone();
+};
+
+// ══════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.ni')[['home','upload','generate','settings'].indexOf(name)]?.classList.add('active');
+  if (name === 'home') renderHome();
+  if (name === 'upload') updateChapterDropdown();
+  if (name === 'generate') renderChDistEditor();
+}
+
+// ══════════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════════
+function getS() {
+  try { return JSON.parse(localStorage.getItem('qbank_cfg') || '{}'); }
+  catch { return {}; }
+}
+function loadSettings() {
+  const s = getS();
+  document.getElementById('ghOwner').value = s.owner || '';
+  document.getElementById('ghRepo').value = s.repo || '';
+  document.getElementById('ghToken').value = s.token || '';
+  updateRepoDisplay();
+}
+function saveSettings() {
+  const owner = document.getElementById('ghOwner').value.trim();
+  const repo = document.getElementById('ghRepo').value.trim();
+  const token = document.getElementById('ghToken').value.trim();
+  if (!owner || !repo || !token) { showToast('Sab fields bharo!', 'e'); return; }
+  localStorage.setItem('qbank_cfg', JSON.stringify({ owner, repo, token }));
+  updateRepoDisplay();
+  showToast('Settings saved! Syncing...', 's');
+  loadFromGithub();
+}
+function updateRepoDisplay() {
+  const s = getS();
+  document.getElementById('repoDisplay').textContent = s.owner && s.repo ? `${s.owner} / ${s.repo}` : 'Not configured';
+}
+
+// ══════════════════════════════════════════════════════════
+// LOCAL STORAGE
+// ══════════════════════════════════════════════════════════
+function saveLocalData() {
+  localStorage.setItem('qbank_data', JSON.stringify(data));
+}
+function loadLocalData() {
+  try {
+    const saved = localStorage.getItem('qbank_data');
+    if (saved) data = JSON.parse(saved);
+  } catch {}
+}
+
+// ══════════════════════════════════════════════════════════
+// GITHUB API
+// ══════════════════════════════════════════════════════════
+async function loadFromGithub() {
+  const s = getS();
+  if (!s.token || !s.owner || !s.repo) return;
+  try {
+    const url = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${APP_CONFIG.TRACKER_FILE}`;
+    const res = await fetch(url, { headers: { 'Authorization': `token ${s.token}` } });
+    if (res.ok) {
+      const json = await res.json();
+      const content = JSON.parse(decodeURIComponent(escape(atob(json.content))));
+      data = { chapters: content.chapters || [], questions: content.questions || {}, history: content.history || [] };
+      saveLocalData();
+      showToast('✓ Synced from GitHub!', 's');
+    }
+  } catch (e) { console.error(e); }
+  renderHome();
+}
+
+async function saveToGithub() {
+  const s = getS();
+  if (!s.token || !s.owner || !s.repo) { showToast('GitHub settings configure karo!', 'e'); return; }
+  
+  showOverlay('Saving to GitHub...');
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+  const url = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${APP_CONFIG.TRACKER_FILE}`;
+  
+  let sha = null;
+  try {
+    const existing = await fetch(url, { headers: { 'Authorization': `token ${s.token}` } });
+    if (existing.ok) sha = (await existing.json()).sha;
+  } catch {}
+  
+  const body = { message: 'Update QBank tracker', content, branch: 'main' };
+  if (sha) body.sha = sha;
+  
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Authorization': `token ${s.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) showToast('✓ Saved to GitHub!', 's');
+    else throw new Error('Save failed');
+  } catch (e) { showToast('Save failed: ' + e.message, 'e'); }
+  hideOverlay();
+}
+
+async function uploadImageToGithub(path, base64) {
+  const s = getS();
+  const url = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${path}`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Authorization': `token ${s.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: `Add: ${path}`, content: base64, branch: 'main' })
+  });
+  if (!res.ok) throw new Error('Upload failed');
+  return await res.json();
+}
+
+// ══════════════════════════════════════════════════════════
+// HOME PAGE
+// ══════════════════════════════════════════════════════════
+function renderHome() {
+  let total = 0, used = 0;
+  Object.values(data.questions).forEach(qs => {
+    total += qs.length;
+    used += qs.filter(q => q.used).length;
+  });
+  
+  document.getElementById('h-total').textContent = total;
+  document.getElementById('h-used').textContent = used;
+  document.getElementById('h-fresh').textContent = total - used;
+  document.getElementById('h-chapters').textContent = data.chapters.length;
+  
+  const list = document.getElementById('chapters-list');
+  if (!data.chapters.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📚</div><div class="empty-text">Koi chapter nahi<br>+ Chapter button dabao</div></div>`;
+    return;
+  }
+  
+  list.innerHTML = data.chapters.map((ch, ci) => {
+    const qs = data.questions[ch] || [];
+    const total = qs.length;
+    const used = qs.filter(q => q.used).length;
+    const fresh = total - used;
+    const pct = total ? Math.round(used / total * 100) : 0;
+    
+    return `
+      <div class="ch-card" id="ch-${ci}">
+        <div class="ch-card-hdr" onclick="toggleChapter(${ci})">
+          <div class="ch-left">
+            <div class="ch-icon">📖</div>
+            <div class="ch-info">
+              <div class="ch-name">${esc(ch)}</div>
+              <div class="ch-meta">${total} Qs · ${fresh} fresh · ${used} used</div>
+            </div>
+          </div>
+          <div class="ch-right">
+            <div class="ch-pct">${pct}%</div>
+            <div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div>
+          </div>
+        </div>
+        <div class="ch-images">
+          ${total ? `<div class="img-grid">${qs.map((q, qi) => `
+            <div class="img-thumb ${q.used ? 'used' : 'fresh'}" onclick="toggleUsed('${ch}',${qi});event.stopPropagation()">
+              <img src="${q.url}" loading="lazy" alt="">
+            </div>
+          `).join('')}</div>` : '<div class="empty-text" style="padding:12px;">Koi image nahi</div>'}
+          <button class="icon-btn" style="margin-top:8px;width:100%;justify-content:center;" onclick="event.stopPropagation();confirmDeleteChapter('${ch}')">🗑 Delete Chapter</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleChapter(ci) {
+  document.getElementById(`ch-${ci}`).classList.toggle('open');
+}
+
+function toggleUsed(ch, qi) {
+  const q = data.questions[ch][qi];
+  q.used = !q.used;
+  saveLocalData();
+  renderHome();
+}
+
+function confirmDeleteChapter(ch) {
+  if (confirm(`"${ch}" aur uski saari images delete karni hain?`)) {
+    data.chapters = data.chapters.filter(c => c !== ch);
+    delete data.questions[ch];
+    saveLocalData();
+    saveToGithub();
+    renderHome();
+    showToast('Chapter deleted!', 's');
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// UPLOAD
+// ══════════════════════════════════════════════════════════
+function initUploadZone() {
+  const zone = document.getElementById('uploadZone');
+  const input = document.getElementById('fileInput');
+  
+  zone.onclick = () => input.click();
+  zone.ondragover = e => { e.preventDefault(); zone.classList.add('dragover'); };
+  zone.ondragleave = () => zone.classList.remove('dragover');
+  zone.ondrop = e => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); };
+  input.onchange = e => handleFiles(e.target.files);
+}
+
+function updateChapterDropdown() {
+  const sel = document.getElementById('uploadChapter');
+  sel.innerHTML = '<option value="">-- Select Chapter --</option>' + 
+    data.chapters.map(ch => `<option value="${ch}">${ch}</option>`).join('');
+}
+
+function handleFiles(files) {
+  pendingUploads = [];
+  const preview = document.getElementById('uploadPreview');
+  preview.innerHTML = '';
+  
+  if (!files.length) return;
+  
+  const grid = document.createElement('div');
+  grid.className = 'preview-grid';
+  
+  Array.from(files).forEach((file, i) => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      pendingUploads.push({ name: file.name, data: e.target.result });
+      const thumb = document.createElement('div');
+      thumb.className = 'preview-thumb';
+      thumb.innerHTML = `<img src="${e.target.result}"><button class="preview-remove" onclick="removeUpload(${i})">✕</button>`;
+      grid.appendChild(thumb);
+      document.getElementById('uploadActions').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+  
+  preview.appendChild(grid);
+}
+
+function removeUpload(i) {
+  pendingUploads.splice(i, 1);
+  if (!pendingUploads.length) document.getElementById('uploadActions').style.display = 'none';
+  // Re-render preview
+  const preview = document.getElementById('uploadPreview');
+  if (pendingUploads.length) {
+    preview.innerHTML = `<div class="preview-grid">${pendingUploads.map((u, i) => `
+      <div class="preview-thumb"><img src="${u.data}"><button class="preview-remove" onclick="removeUpload(${i})">✕</button></div>
+    `).join('')}</div>`;
+  } else {
+    preview.innerHTML = '';
+  }
+}
+
+async function uploadImages() {
+  const chapter = document.getElementById('uploadChapter').value;
+  if (!chapter) { showToast('Chapter select karo!', 'e'); return; }
+  if (!pendingUploads.length) { showToast('Koi image nahi!', 'e'); return; }
+  
+  const s = getS();
+  if (!s.token) { showToast('GitHub token set karo!', 'e'); showPage('settings'); return; }
+  
+  showOverlay('Uploading images...');
+  
+  if (!data.questions[chapter]) data.questions[chapter] = [];
+  
+  for (let i = 0; i < pendingUploads.length; i++) {
+    const u = pendingUploads[i];
+    const ts = Date.now();
+    const ext = u.name.split('.').pop();
+    const filename = `${chapter.replace(/\s+/g,'_')}_${ts}_${i}.${ext}`;
+    const path = `${APP_CONFIG.IMAGES_PATH}/${chapter}/${filename}`;
+    
+    updateOverlay(`Uploading ${i+1}/${pendingUploads.length}...`, (i/pendingUploads.length)*90);
+    
+    try {
+      const base64 = u.data.split(',')[1];
+      await uploadImageToGithub(path, base64);
+      
+      data.questions[chapter].push({
+        id: `${chapter}_${ts}_${i}`,
+        filename,
+        url: `https://raw.githubusercontent.com/${s.owner}/${s.repo}/main/${path}`,
+        used: false,
+        uploadDate: new Date().toISOString()
+      });
+    } catch (e) { console.error(e); }
+  }
+  
+  saveLocalData();
+  await saveToGithub();
+  
+  pendingUploads = [];
+  document.getElementById('uploadPreview').innerHTML = '';
+  document.getElementById('uploadActions').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  
+  hideOverlay();
+  showToast(`✓ ${pendingUploads.length || 'All'} images uploaded!`, 's');
+  renderHome();
+}
+
+// ══════════════════════════════════════════════════════════
+// GENERATE PAGE
+// ══════════════════════════════════════════════════════════
+function calcAutoChDist(Q) {
+  const dist = {};
+  const chapters = data.chapters.filter(ch => (data.questions[ch] || []).length > 0);
+  if (!chapters.length || !Q) return dist;
+  
+  // Calculate available fresh per chapter
+  const freshCounts = {};
+  let totalFresh = 0;
+  chapters.forEach(ch => {
+    const fresh = (data.questions[ch] || []).filter(q => !q.used).length;
+    freshCounts[ch] = fresh;
+    totalFresh += fresh;
+  });
+  
+  // Distribute proportionally
+  let remaining = Q;
+  chapters.forEach((ch, i) => {
+    if (i === chapters.length - 1) {
+      dist[ch] = remaining;
+    } else {
+      const ratio = totalFresh ? freshCounts[ch] / totalFresh : 1 / chapters.length;
+      const count = Math.round(Q * ratio);
+      dist[ch] = Math.min(count, remaining);
+      remaining -= dist[ch];
+    }
+  });
+  
+  return dist;
+}
+
+function renderChDistEditor() {
+  const Q = parseInt(document.getElementById('paperQ').value) || 0;
+  const mode = document.getElementById('paperMode').value;
+  const container = document.getElementById('ch-dist-editor');
+  
+  const chapters = data.chapters.filter(ch => (data.questions[ch] || []).length > 0);
+  
+  if (!chapters.length) {
+    container.innerHTML = '<div class="empty-text" style="padding:12px;">Koi chapter nahi with questions</div>';
+    updateDistTotal();
+    return;
+  }
+  
+  const autoDist = mode === 'all_equal' ? (() => {
+    const perCh = Math.floor(Q / chapters.length);
+    const rem = Q % chapters.length;
+    const d = {};
+    chapters.forEach((ch, i) => d[ch] = perCh + (i < rem ? 1 : 0));
+    return d;
+  })() : calcAutoChDist(Q);
+  
+  container.innerHTML = chapters.map(ch => {
+    const qs = data.questions[ch] || [];
+    const fresh = qs.filter(q => !q.used).length;
+    const val = chDist[ch] !== undefined ? chDist[ch] : (autoDist[ch] || 0);
+    
+    return `
+      <div class="ch-dist-row">
+        <span class="ch-dist-name">${esc(ch)}</span>
+        <span class="ch-dist-avail">${fresh}/${qs.length}</span>
+        <input type="number" class="ch-dist-inp" value="${val}" min="0" max="${qs.length}" 
+          onchange="chDist['${ch}']=parseInt(this.value)||0;updateDistTotal()">
+      </div>
+    `;
+  }).join('');
+  
+  updateDistTotal();
+}
+
+function updateDistTotal() {
+  const Q = parseInt(document.getElementById('paperQ').value) || 0;
+  const mode = document.getElementById('paperMode').value;
+  const chapters = data.chapters.filter(ch => (data.questions[ch] || []).length > 0);
+  
+  const autoDist = mode === 'all_equal' ? (() => {
+    const perCh = Math.floor(Q / chapters.length);
+    const rem = Q % chapters.length;
+    const d = {};
+    chapters.forEach((ch, i) => d[ch] = perCh + (i < rem ? 1 : 0));
+    return d;
+  })() : calcAutoChDist(Q);
+  
+  let total = 0;
+  chapters.forEach(ch => {
+    total += chDist[ch] !== undefined ? chDist[ch] : (autoDist[ch] || 0);
+  });
+  
+  const badge = document.getElementById('dist-total-badge');
+  badge.textContent = `${total}/${Q}`;
+  badge.style.background = total === Q ? 'var(--gdim)' : total > Q ? 'var(--rdim)' : 'var(--adim)';
+  badge.style.color = total === Q ? 'var(--green)' : total > Q ? 'var(--red)' : 'var(--amber)';
+}
+
+function onModeChange() {
+  chDist = {};
+  renderChDistEditor();
+}
+
+function resetChDist() {
+  chDist = {};
+  renderChDistEditor();
+  showToast('Auto distribution reset', 'a');
+}
+
+function generatePaper() {
+  const Q = parseInt(document.getElementById('paperQ').value) || 0;
+  if (!Q) { showToast('Total Questions likho!', 'e'); document.getElementById('paperQ').focus(); return; }
+  
+  const mode = document.getElementById('paperMode').value;
+  const chapters = data.chapters.filter(ch => (data.questions[ch] || []).length > 0);
+  
+  if (!chapters.length) { showToast('Koi chapter nahi with questions!', 'e'); return; }
+  
+  const autoDist = mode === 'all_equal' ? (() => {
+    const perCh = Math.floor(Q / chapters.length);
+    const rem = Q % chapters.length;
+    const d = {};
+    chapters.forEach((ch, i) => d[ch] = perCh + (i < rem ? 1 : 0));
+    return d;
+  })() : calcAutoChDist(Q);
+  
+  // Score function for sorting
+  const score = (q) => {
+    const daysSince = q.uploadDate ? Math.floor((Date.now() - new Date(q.uploadDate).getTime()) / 86400000) : 9999;
+    if (mode === 'fresh') return (q.used ? 1000 : 0) - daysSince;
+    return (q.used ? 500 : 0) - daysSince;
+  };
+  
+  const blocks = [];
+  let cursor = 1;
+  
+  chapters.forEach(ch => {
+    const wantCount = chDist[ch] !== undefined ? chDist[ch] : (autoDist[ch] || 0);
+    if (!wantCount) return;
+    
+    const pool = [...(data.questions[ch] || [])];
+    pool.sort((a, b) => score(a) - score(b));
+    
+    const picked = [];
+    for (let i = 0; i < wantCount && i < pool.length; i++) {
+      picked.push({ ...pool[i], chapter: ch });
+    }
+    
+    if (picked.length) {
+      blocks.push({
+        chapter: ch,
+        items: picked,
+        start: cursor,
+        end: cursor + picked.length - 1,
+        count: picked.length
+      });
+      cursor += picked.length;
+    }
+  });
+  
+  if (!blocks.length) { showToast('Koi questions select nahi hue!', 'e'); return; }
+  
+  currentPaper = {
+    date: new Date().toLocaleDateString('en-IN'),
+    totalQ: blocks.reduce((s, b) => s + b.count, 0),
+    blocks
+  };
+  
+  renderPaperOutput();
+  document.getElementById('nb-paper').classList.add('show');
+}
+
+function renderPaperOutput() {
+  if (!currentPaper) return;
+  
+  const freshCount = currentPaper.blocks.reduce((s, b) => s + b.items.filter(i => !i.used).length, 0);
+  const usedCount = currentPaper.totalQ - freshCount;
+  
+  const content = document.getElementById('paperContent');
+  content.innerHTML = `
+    <div class="gen-paper-wrap">
+      <div class="gp-header">
+        <div class="gp-title">📄 Test Paper — ${currentPaper.date}</div>
+        <div class="gp-meta">${currentPaper.totalQ} Questions · ${currentPaper.blocks.length} Chapters</div>
+        <div class="gp-chips">
+          <span class="gp-chip fresh">🟢 ${freshCount} Fresh</span>
+          <span class="gp-chip">${usedCount} Repeated</span>
+        </div>
+      </div>
+      ${currentPaper.blocks.map((blk, bi) => `
+        <div class="gp-section">
+          <div class="gp-sec-head" onclick="toggleSec(${bi})">
+            <div class="gp-sec-left">
+              <span class="gp-range">Q${blk.start}${blk.start !== blk.end ? '–Q'+blk.end : ''}</span>
+              <span class="gp-ch-name">${esc(blk.chapter)}</span>
+            </div>
+            <span class="gp-chev" id="gchev-${bi}">▼</span>
+          </div>
+          <div class="gp-sec-body" id="gsec-${bi}">
+            <div class="gp-img-grid">
+              ${blk.items.map(q => `<div class="gp-img"><img src="${q.url}" loading="lazy"></div>`).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  
+  document.getElementById('paperOutput').style.display = 'block';
+}
+
+function toggleSec(bi) {
+  document.getElementById(`gsec-${bi}`).classList.toggle('open');
+  document.getElementById(`gchev-${bi}`).classList.toggle('open');
+}
+
+// ══════════════════════════════════════════════════════════
+// DOWNLOAD FUNCTIONS
+// ══════════════════════════════════════════════════════════
+async function downloadImages() {
+  if (!currentPaper) return;
+  showOverlay('Downloading images...');
+  
+  let done = 0;
+  const allItems = currentPaper.blocks.flatMap(b => b.items);
+  
+  for (const item of allItems) {
+    updateOverlay(`${done+1}/${allItems.length}`, (done/allItems.length)*100);
+    try {
+      const res = await fetch(item.url);
+      if (res.ok) {
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = item.filename;
+        a.click();
+        await new Promise(r => setTimeout(r, 400));
+      }
+    } catch {}
+    done++;
+  }
+  
+  hideOverlay();
+  showToast(`✓ ${done} images downloaded!`, 's');
+}
+
+async function downloadZip() {
+  if (!currentPaper) return;
+  await loadJSZip();
+  
+  const zip = new JSZip();
+  const allItems = currentPaper.blocks.flatMap(b => b.items);
+  
+  showOverlay('Creating ZIP...');
+  let done = 0;
+  
+  for (const item of allItems) {
+    updateOverlay(item.filename, (done/allItems.length)*90);
+    try {
+      const res = await fetch(item.url);
+      if (res.ok) zip.file(item.filename, await res.blob());
+    } catch {}
+    done++;
+  }
+  
+  updateOverlay('Compressing...', 95);
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `QBank_Test_${Date.now()}.zip`;
+  a.click();
+  
+  hideOverlay();
+  showToast(`✅ ZIP ready! (${done} images)`, 's');
+}
+
+async function downloadPDF() {
+  if (!currentPaper) return;
+  await loadJsPDF();
+  
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageW = 210, pageH = 297;
+  const margin = 10;
+  
+  showOverlay('Creating PDF...');
+  
+  const allItems = currentPaper.blocks.flatMap(b => b.items);
+  let done = 0, firstPage = true;
+  
+  for (const item of allItems) {
+    updateOverlay(`${done+1}/${allItems.length}`, (done/allItems.length)*95);
+    
+    try {
+      const res = await fetch(item.url);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      const imgData = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+      
+      if (!firstPage) pdf.addPage();
+      firstPage = false;
+      
+      // Header
+      pdf.setFillColor(17, 19, 24);
+      pdf.rect(0, 0, pageW, 12, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.setTextColor(34, 197, 94);
+      pdf.text(`Q${done+1} | ${item.chapter}`, margin, 8);
+      pdf.setTextColor(90, 96, 112);
+      pdf.text(currentPaper.date, pageW - margin, 8, { align: 'right' });
+      
+      // Image
+      const imgType = imgData.includes('data:image/png') ? 'PNG' : 'JPEG';
+      pdf.addImage(imgData, imgType, margin, 15, pageW - margin*2, pageH - 25, undefined, 'FAST');
+      
+    } catch {}
+    done++;
+  }
+  
+  updateOverlay('Saving PDF...', 98);
+  pdf.save(`QBank_Test_${Date.now()}.pdf`);
+  
+  hideOverlay();
+  showToast(`✅ PDF ready! (${done} pages)`, 's');
+}
+
+async function markPaperDone() {
+  if (!currentPaper) return;
+  
+  // Mark all items as used
+  currentPaper.blocks.forEach(blk => {
+    blk.items.forEach(item => {
+      const q = (data.questions[item.chapter] || []).find(q => q.id === item.id);
+      if (q) q.used = true;
+    });
+  });
+  
+  // Save to history
+  data.history = data.history || [];
+  data.history.unshift({
+    date: currentPaper.date,
+    totalQ: currentPaper.totalQ,
+    chapters: currentPaper.blocks.map(b => ({ chapter: b.chapter, count: b.count }))
+  });
+  
+  saveLocalData();
+  await saveToGithub();
+  
+  currentPaper = null;
+  document.getElementById('paperOutput').style.display = 'none';
+  document.getElementById('nb-paper').classList.remove('show');
+  renderHome();
+  showToast('✓ Paper marked done!', 's');
+}
+
+// ══════════════════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════════════════
+function openModal(mode) {
+  modalMode = mode;
+  const m = document.getElementById('modal');
+  const title = document.getElementById('mTitle');
+  const hint = document.getElementById('mHint');
+  const body = document.getElementById('mBody');
+  
+  if (mode === 'addChapter') {
+    title.textContent = 'Add Chapter';
+    hint.textContent = 'Naya chapter banao (e.g. Fractions, Geometry)';
+    body.innerHTML = '<input class="modal-inp" id="modalInput" placeholder="Chapter name">';
+  }
+  
+  m.classList.add('open');
+  setTimeout(() => document.getElementById('modalInput')?.focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  modalMode = null;
+}
+
+function confirmModal() {
+  if (modalMode === 'addChapter') {
+    const name = document.getElementById('modalInput').value.trim();
+    if (!name) { showToast('Name likho!', 'e'); return; }
+    if (data.chapters.includes(name)) { showToast('Chapter already exists!', 'e'); return; }
+    data.chapters.push(name);
+    data.questions[name] = [];
+    saveLocalData();
+    saveToGithub();
+    showToast(`✓ "${name}" added!`, 's');
+    renderHome();
+    updateChapterDropdown();
+  }
+  closeModal();
+}
+
+// ══════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════
+function resetAllUsed() {
+  if (!confirm('Saare questions fresh mark karne hain?')) return;
+  Object.values(data.questions).forEach(qs => qs.forEach(q => q.used = false));
+  saveLocalData();
+  saveToGithub();
+  renderHome();
+  showToast('✓ All reset to fresh!', 's');
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `qbank_export_${Date.now()}.json`;
+  a.click();
+  showToast('Data exported!', 's');
+}
+
+function esc(s) { return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function showOverlay(text, pct = 0) {
+  document.getElementById('dl-text').textContent = text;
+  document.getElementById('dl-fill').style.width = pct + '%';
+  document.getElementById('dl-overlay').classList.add('open');
+}
+function updateOverlay(text, pct) {
+  document.getElementById('dl-text').textContent = text;
+  document.getElementById('dl-fill').style.width = pct + '%';
+}
+function hideOverlay() {
+  document.getElementById('dl-overlay').classList.remove('open');
+}
+
+function showToast(msg, type = 's') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// PWA
+let dp;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); dp = e;
+  const btn = document.createElement('div');
+  btn.className = 'ni';
+  btn.innerHTML = '<div class="ni-icon">📲</div><div class="ni-lbl">Install</div>';
+  btn.onclick = async () => { if (!dp) return; dp.prompt(); const { outcome } = await dp.userChoice; if (outcome === 'accepted') btn.remove(); dp = null; };
+  document.getElementById('bnav').appendChild(btn);
+});
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) confirmModal();
+});
+</script>
 </body>
 </html>
