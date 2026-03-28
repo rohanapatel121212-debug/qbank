@@ -202,6 +202,7 @@
   <div class="logo">Q<span>Bank</span></div>
   <div class="header-right">
     <div class="streak-pill" id="streakPill" style="display:none">🔥 <span id="streakCount">0</span></div>
+    <div id="syncDot" title="GitHub sync" style="display:none;width:8px;height:8px;border-radius:50%;background:var(--green);cursor:pointer;" onclick="switchTab('settings')"></div>
     <div class="date-pill" id="headerDate">—</div>
   </div>
 </header>
@@ -325,7 +326,32 @@
     <hr class="div" />
 
     <div class="card">
-      <div class="card-title">💾 Backup & Restore</div>
+      <div class="card-title">☁️ GitHub Cloud Sync</div>
+      <div class="field">
+        <div class="field-label">GitHub Token (ghp_...)</div>
+        <input class="field-input" type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx" />
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Settings → Developer settings → Personal access tokens → repo scope chahiye</div>
+      </div>
+      <div class="row-2">
+        <div class="field"><div class="field-label">Owner</div><input class="field-input" id="ghOwner" placeholder="rohanapatel121212-debug" /></div>
+        <div class="field"><div class="field-label">Repo</div><input class="field-input" id="ghRepo" placeholder="qbank" /></div>
+      </div>
+      <div class="row-2">
+        <div class="field"><div class="field-label">Branch</div><input class="field-input" id="ghBranch" placeholder="main" /></div>
+        <div class="field"><div class="field-label">Sync File</div><input class="field-input" id="ghFile" placeholder="qbank-data.json" /></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveGhConfig()">💾 GitHub Config Save Karo</button>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-green" style="flex:1" id="ghPushBtn" onclick="ghPush()">☁️ GitHub Pe Save</button>
+        <button class="btn btn-ghost" style="flex:1" id="ghPullBtn" onclick="ghPull()">⬇️ GitHub Se Load</button>
+      </div>
+      <div id="ghStatus" style="margin-top:8px;font-size:12px;color:var(--text-muted);text-align:center;min-height:18px;"></div>
+    </div>
+
+    <hr class="div" />
+
+    <div class="card">
+      <div class="card-title">💾 Local Backup</div>
       <button class="btn btn-green" onclick="exportData()">📤 Data Export Karo (JSON)</button>
       <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">📥 Data Import Karo (JSON)</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
@@ -815,6 +841,14 @@ function renderChapters(){
 function renderSettings(){
   const s=S.settings();
   document.getElementById('setCount').value=s.dailyCount;
+  // GitHub config
+  const gc=GH.config()||{};
+  if(document.getElementById('ghToken')) document.getElementById('ghToken').value=gc.token||'';
+  if(document.getElementById('ghOwner')) document.getElementById('ghOwner').value=gc.owner||'rohanapatel121212-debug';
+  if(document.getElementById('ghRepo'))  document.getElementById('ghRepo').value=gc.repo||'qbank';
+  if(document.getElementById('ghBranch'))document.getElementById('ghBranch').value=gc.branch||'main';
+  if(document.getElementById('ghFile'))  document.getElementById('ghFile').value=gc.file||'qbank-data.json';
+  if(gc.token) ghSetStatus('Config ready ✅');
   const mix=s.mix||{};
   document.getElementById('mixGrid').innerHTML=LEVELS.map(l=>`
     <div class="mix-item">
@@ -858,6 +892,114 @@ function resetAll(){
   ['qb_s','qb_q','qb_cfg','qb_today','qb_streak'].forEach(k=>localStorage.removeItem(k));
   activeTodayStu=null; activeStatsStu=null;
   showToast('Sab reset ho gaya'); renderSettings(); renderToday();
+}
+
+// ── GITHUB SYNC ──────────────────────────────────────────────
+const GH = {
+  config() { try{return JSON.parse(localStorage.getItem('qb_gh')||'null');}catch{return null;} },
+  setConfig(v){ localStorage.setItem('qb_gh',JSON.stringify(v)); },
+};
+
+function ghHeaders(){
+  const c=GH.config();
+  if(!c||!c.token) return null;
+  return { 'Authorization':'token '+c.token, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' };
+}
+
+function ghApiUrl(){
+  const c=GH.config();
+  if(!c) return null;
+  return `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${c.file}`;
+}
+
+function ghSetStatus(msg, color='var(--text-muted)'){
+  const el=document.getElementById('ghStatus');
+  if(el){ el.textContent=msg; el.style.color=color; }
+}
+
+async function ghPush(){
+  const c=GH.config();
+  if(!c||!c.token||!c.owner||!c.repo||!c.file){ ghSetStatus('❌ Pehle config save karo','var(--red)'); return; }
+  const btn=document.getElementById('ghPushBtn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Saving...'; }
+  ghSetStatus('GitHub pe save ho raha hai...');
+  try{
+    const headers=ghHeaders();
+    const url=ghApiUrl();
+    // Get current SHA (needed for update)
+    let sha=null;
+    try{
+      const r=await fetch(url+'?ref='+(c.branch||'main'),{headers});
+      if(r.ok){ const d=await r.json(); sha=d.sha; }
+    }catch{}
+    // Build payload
+    const data={
+      students:S.students(),
+      questions:S.questions(),
+      settings:S.settings(),
+      streak:S.streak(),
+      synced:new Date().toISOString(),
+      version:2
+    };
+    const body={ message:'QBank sync '+ds(), content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2)))), branch:c.branch||'main' };
+    if(sha) body.sha=sha;
+    const res=await fetch(url,{method:'PUT',headers,body:JSON.stringify(body)});
+    if(!res.ok){ const e=await res.json(); throw new Error(e.message||res.status); }
+    ghSetStatus('✅ GitHub pe save ho gaya! '+new Date().toLocaleTimeString('hi-IN'),'var(--green)');
+    showToast('☁️ GitHub sync complete!');
+  }catch(err){
+    ghSetStatus('❌ Error: '+err.message,'var(--red)');
+    showToast('Sync failed: '+err.message);
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='☁️ GitHub Pe Save'; }
+  }
+}
+
+async function ghPull(){
+  const c=GH.config();
+  if(!c||!c.token||!c.owner||!c.repo||!c.file){ ghSetStatus('❌ Pehle config save karo','var(--red)'); return; }
+  const btn=document.getElementById('ghPullBtn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Loading...'; }
+  ghSetStatus('GitHub se load ho raha hai...');
+  try{
+    const headers=ghHeaders();
+    const url=ghApiUrl();
+    const res=await fetch(url+'?ref='+(c.branch||'main'),{headers});
+    if(!res.ok){ const e=await res.json(); throw new Error(e.message||'File nahi mili'); }
+    const d=await res.json();
+    const content=JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/
+/g,'')))));
+    if(!content.students||!content.questions) throw new Error('Invalid data format');
+    if(!confirm(`GitHub se load karoge? Isme ${Object.keys(content.questions).length} questions hain.
+Local data replace ho jayega.`)) return;
+    S.setStudents(content.students);
+    S.setQuestions(content.questions);
+    if(content.settings) S.setSettings(content.settings);
+    if(content.streak) S.setStreak(content.streak);
+    localStorage.removeItem('qb_today');
+    ghSetStatus('✅ Load ho gaya! '+new Date().toLocaleTimeString('hi-IN'),'var(--green)');
+    showToast('⬇️ GitHub se data load ho gaya!');
+    renderToday();
+  }catch(err){
+    ghSetStatus('❌ Error: '+err.message,'var(--red)');
+    showToast('Load failed: '+err.message);
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='⬇️ GitHub Se Load'; }
+  }
+}
+
+function saveGhConfig(){
+  const c={
+    token: document.getElementById('ghToken').value.trim(),
+    owner: document.getElementById('ghOwner').value.trim()||'rohanapatel121212-debug',
+    repo:  document.getElementById('ghRepo').value.trim()||'qbank',
+    branch:document.getElementById('ghBranch').value.trim()||'main',
+    file:  document.getElementById('ghFile').value.trim()||'qbank-data.json',
+  };
+  if(!c.token){ showToast('Token daalo pehle'); return; }
+  GH.setConfig(c);
+  showToast('✅ GitHub config save ho gaya!');
+  ghSetStatus('Config ready — "GitHub Pe Save" dabao');
 }
 
 // ── BACKUP ────────────────────────────────────────────────────
@@ -918,6 +1060,8 @@ if('serviceWorker' in navigator){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
+// Show sync dot if GH configured
+if(GH.config()?.token){ const d=document.getElementById('syncDot'); if(d) d.style.display=''; }
 document.getElementById('headerDate').textContent=new Date().toLocaleDateString('hi-IN',{weekday:'short',day:'numeric',month:'short'});
 renderStreak();
 renderToday();
