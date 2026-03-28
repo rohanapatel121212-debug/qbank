@@ -236,6 +236,11 @@
     .empty-title{font-family:'Syne',sans-serif;font-size:17px;color:var(--text);margin-bottom:6px;}
     .empty-sub{font-size:12px;line-height:1.7;}
 
+    /* SECTION ITEM */
+    .section-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;}
+    .section-item-info{font-size:13px;font-weight:500;}
+    .section-item-meta{font-size:11px;color:var(--text-muted);margin-top:1px;}
+
     /* TOAST */
     .toast{position:fixed;bottom:calc(var(--nav-h) + 12px);left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:500;transition:transform .3s;z-index:999;white-space:nowrap;}
     .toast.show{transform:translateX(-50%) translateY(0);}
@@ -296,8 +301,10 @@
 
   <!-- ===== ADD ===== -->
   <div class="tab-panel" id="panel-add">
+
+    <!-- STEP 1: Student -->
     <div class="card">
-      <div class="card-title">👤 Student Add Karo</div>
+      <div class="card-title">👤 Student</div>
       <div class="row-2">
         <div class="field"><div class="field-label">Naam</div><input class="field-input" id="addStuName" placeholder="Bhumi" /></div>
         <div class="field"><div class="field-label">Class</div><input class="field-input" id="addStuClass" placeholder="5" /></div>
@@ -305,30 +312,72 @@
       <button class="btn btn-primary" onclick="addStudent()">Student Add Karo</button>
     </div>
 
+    <!-- STEP 2: Book -->
     <div class="card">
-      <div class="card-title">📝 Questions Add Karo</div>
-      <div class="field"><div class="field-label">Student</div>
-        <select class="field-select" id="addQStu"><option value="">— Select Student —</option></select>
-      </div>
-      <div class="field"><div class="field-label">Chapter ka Naam</div><input class="field-input" id="addQChapter" placeholder="Fractions" /></div>
-      <div class="field"><div class="field-label">Type (Exercise / Example / Practice / MCQ etc.)</div><input class="field-input" id="addQType" placeholder="Exercise" /></div>
+      <div class="card-title">📚 Step 1 — Student & Book</div>
       <div class="field">
-        <div class="field-label">Q Numbers</div>
-        <div class="range-type">
-          <div class="range-opt active" id="optSingle" onclick="setRangeMode('single')">Individual</div>
-          <div class="range-opt" id="optRange" onclick="setRangeMode('range')">Range</div>
+        <div class="field-label">Student</div>
+        <select class="field-select" id="addQStu" onchange="onStuChange()">
+          <option value="">— Select Student —</option>
+        </select>
+      </div>
+      <div id="bookSection" style="display:none">
+        <div class="field">
+          <div class="field-label">Book</div>
+          <select class="field-select" id="addQBook" onchange="onBookChange()">
+            <option value="">— Select Book —</option>
+          </select>
         </div>
-        <div id="modeSingle"><input class="field-input" id="addQNums" placeholder="1, 3, 5, 7" /><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Comma se alag karo</div></div>
-        <div id="modeRange" style="display:none">
-          <div class="row-2">
-            <div><div class="field-label">Shuru se</div><input class="field-input" id="addRangeFrom" type="number" placeholder="1" /></div>
-            <div><div class="field-label">Tak</div><input class="field-input" id="addRangeTo" type="number" placeholder="50" /></div>
-          </div>
+        <!-- Add new book -->
+        <div id="newBookRow" style="display:flex;gap:8px;margin-top:-4px;margin-bottom:12px;">
+          <input class="field-input" id="newBookName" placeholder="Naya book ka naam (NCERT, RS Aggarwal...)" style="flex:1" />
+          <button class="btn-sm btn-sm-ghost" onclick="addBook()" style="white-space:nowrap;flex-shrink:0;">+ Add</button>
         </div>
       </div>
-      <button class="btn btn-primary" onclick="addQuestions()">Questions Add Karo</button>
     </div>
 
+    <!-- STEP 3: Chapter + Sections -->
+    <div class="card" id="chapterCard" style="display:none">
+      <div class="card-title">📖 Step 2 — Chapter & Sections</div>
+      <div class="field">
+        <div class="field-label">Chapter ka Naam</div>
+        <input class="field-input" id="addQChapter" placeholder="Ch 13 - Surface Areas and Volumes" />
+      </div>
+
+      <!-- Sections list (added dynamically) -->
+      <div id="sectionsList" style="margin-bottom:10px;"></div>
+
+      <!-- Add one section -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;">Section Add Karo</div>
+        <div class="field">
+          <div class="field-label">Section Type</div>
+          <input class="field-input" id="addQType" placeholder="Ex 13.1 / Example 1-8 / MCQ..." />
+        </div>
+        <div class="field">
+          <div class="field-label">Q Numbers</div>
+          <div class="range-type">
+            <div class="range-opt active" id="optSingle" onclick="setRangeMode('single')">Individual</div>
+            <div class="range-opt" id="optRange" onclick="setRangeMode('range')">Range</div>
+          </div>
+          <div id="modeSingle">
+            <input class="field-input" id="addQNums" placeholder="1, 3, 5, 7" />
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Comma se alag karo</div>
+          </div>
+          <div id="modeRange" style="display:none">
+            <div class="row-2">
+              <div><div class="field-label">Shuru se</div><input class="field-input" id="addRangeFrom" type="number" placeholder="1" /></div>
+              <div><div class="field-label">Tak</div><input class="field-input" id="addRangeTo" type="number" placeholder="12" /></div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-ghost" onclick="addSection()">➕ Section Add Karo</button>
+      </div>
+
+      <button class="btn btn-primary" id="saveChapterBtn" onclick="saveChapter()" style="display:none">💾 Chapter Save Karo</button>
+    </div>
+
+    <!-- BROWSE -->
     <div class="card" id="browseCard" style="display:none">
       <div class="card-title">📂 Added Questions</div>
       <div id="browseList"></div>
@@ -446,8 +495,7 @@
 
     <div class="card">
       <div class="card-title">⚠️ Reset</div>
-      <button class="btn btn-danger" onclick="resetProgress()">🗑️ Sirf Progress Reset (Questions + Levels rahenge)</button>
-      <button class="btn btn-danger" onclick="resetAll()">💣 Sab Kuch Delete Karo</button>
+      <button class="btn btn-danger" onclick="resetProgress()">🔄 Saara Progress Reset (Questions + Levels rahenge)</button>
     </div>
   </div>
 
@@ -704,9 +752,12 @@ function renderHomeList(){
     const p=prio(q);
     const dotCls=p==='wrong'?'p-wrong':p==='due'?'p-due':'p-new';
     const stepLabel = q.level && !lvInfo(q.level).skip ? ` · Step ${(q.step||0)+1}/4` : '';
-    const sub=p==='wrong'?`${q.wrong}x galat${stepLabel} · ${q.chapter} · ${q.type}`
-      :p==='due'?`SRS +${overdue(q)}d${stepLabel} · ${q.chapter} · ${q.type}`
-      :`Naya · ${q.chapter} · ${q.type}`;
+    const booksAll=BS.all();
+    const bookName = q.book ? (booksAll[q.student]?.find(b=>b.id===q.book)?.name||q.book) : '';
+    const bookLabel = bookName ? `${bookName} · ` : '';
+    const sub=p==='wrong'?`${q.wrong}x galat${stepLabel} · ${bookLabel}${q.chapter} · ${q.type}`
+      :p==='due'?`SRS +${overdue(q)}d${stepLabel} · ${bookLabel}${q.chapter} · ${q.type}`
+      :`Naya · ${bookLabel}${q.chapter} · ${q.type}`;
     const curLv=q.level||null;
     const lvBtns=LEVELS.map(l=>`<button class="lv-btn ${curLv===l.key?'active-'+l.key:''}" onclick="setLevel('${id}','${l.key}')">${l.short}</button>`).join('');
     const el=document.createElement('div');
@@ -724,7 +775,10 @@ function renderHomeList(){
           <button class="btn-mark btn-wrong ${res==='wrong'?'active':''}" onclick="markQ('${id}','wrong')">✗</button>
         </div>
       </div>
-      <div class="q-level-row" id="lvrow-${id}">${lvBtns}</div>`;
+      <div class="q-level-row" id="lvrow-${id}">
+        ${lvBtns}
+        <button class="lv-btn" style="color:var(--text-muted);max-width:36px;" onclick="resetOneQ('${id}')" title="Unused karo">↺</button>
+      </div>`;
     container.appendChild(el);
   });
 }
@@ -741,6 +795,23 @@ function setLevel(id,lvKey){
   const row=document.getElementById('lvrow-'+id);
   if(row)row.querySelectorAll('.lv-btn').forEach((btn,i)=>{const l=LEVELS[i];btn.className='lv-btn'+(curLv===l.key?' active-'+l.key:'');});
   showToast(curLv?`✅ ${lvInfo(curLv).label} set`:'Level hata diya');
+}
+
+function resetOneQ(id){
+  const qs=S.questions();
+  if(!qs[id])return;
+  qs[id].lastDate=null;
+  qs[id].step=0;
+  qs[id].correct=0;
+  qs[id].wrong=0;
+  qs[id].interval=lvStepInterval(qs[id].level||null,0);
+  S.setQuestions(qs);
+  // Also remove from today's results
+  const td=S.today();
+  if(td[activeHomeStu]?.results?.[id]) delete td[activeHomeStu].results[id];
+  S.setToday(td);
+  showToast('↺ Question unused ho gaya');
+  renderHomeList();
 }
 
 function markQ(id,result){
@@ -780,12 +851,75 @@ function regenerate(){
 }
 
 // ── ADD ───────────────────────────────────────────────────────
+// books: { stuId: [ {id, name} ] }
+const BS = {
+  all()     { try{return JSON.parse(localStorage.getItem('qb_books')||'{}');}catch{return{};} },
+  set(v)    { localStorage.setItem('qb_books',JSON.stringify(v)); },
+  forStu(sid){ return (BS.all()[sid]||[]); },
+  addBook(sid,name){
+    const all=BS.all();
+    if(!all[sid])all[sid]=[];
+    const id='bk_'+name.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+    if(all[sid].find(b=>b.id===id)){return null;}
+    all[sid].push({id,name});BS.set(all);return id;
+  }
+};
+
+// Pending sections for current chapter
+let pendingSections=[]; // [{type, nums:[]}]
+
 function renderAdd(){
   const students=S.students();
   document.getElementById('addQStu').innerHTML='<option value="">— Select Student —</option>'+
     students.map(s=>`<option value="${s.id}">${s.name} (Class ${s.cls})</option>`).join('');
+  document.getElementById('bookSection').style.display='none';
+  document.getElementById('chapterCard').style.display='none';
+  pendingSections=[];
   renderBrowse();
 }
+
+function onStuChange(){
+  const sid=document.getElementById('addQStu').value;
+  if(!sid){document.getElementById('bookSection').style.display='none';return;}
+  document.getElementById('bookSection').style.display='';
+  refreshBookSelect(sid);
+  document.getElementById('chapterCard').style.display='none';
+  pendingSections=[];
+}
+
+function refreshBookSelect(sid){
+  const books=BS.forStu(sid);
+  document.getElementById('addQBook').innerHTML='<option value="">— Select Book —</option>'+
+    books.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+}
+
+function addBook(){
+  const sid=document.getElementById('addQStu').value;
+  const name=document.getElementById('newBookName').value.trim();
+  if(!sid){showToast('Pehle student select karo');return;}
+  if(!name){showToast('Book ka naam likho');return;}
+  const id=BS.addBook(sid,name);
+  if(!id){showToast('Yeh book already hai');return;}
+  document.getElementById('newBookName').value='';
+  refreshBookSelect(sid);
+  document.getElementById('addQBook').value=id;
+  onBookChange();
+  showToast(`✅ "${name}" add ho gayi!`);
+}
+
+function onBookChange(){
+  const bookId=document.getElementById('addQBook').value;
+  if(!bookId){document.getElementById('chapterCard').style.display='none';return;}
+  document.getElementById('chapterCard').style.display='';
+  pendingSections=[];
+  renderSectionsList();
+  document.getElementById('addQChapter').value='';
+  document.getElementById('addQType').value='';
+  document.getElementById('addQNums').value='';
+  document.getElementById('addRangeFrom').value='';
+  document.getElementById('addRangeTo').value='';
+}
+
 function addStudent(){
   const name=document.getElementById('addStuName').value.trim();
   const cls=document.getElementById('addStuClass').value.trim();
@@ -797,6 +931,7 @@ function addStudent(){
   document.getElementById('addStuName').value='';document.getElementById('addStuClass').value='';
   showToast(`✅ ${name} add ho gaya!`);renderAdd();
 }
+
 function setRangeMode(mode){
   rangeMode=mode;
   document.getElementById('optSingle').classList.toggle('active',mode==='single');
@@ -804,11 +939,10 @@ function setRangeMode(mode){
   document.getElementById('modeSingle').style.display=mode==='single'?'':'none';
   document.getElementById('modeRange').style.display=mode==='range'?'':'none';
 }
-function addQuestions(){
-  const stuId=document.getElementById('addQStu').value;
-  const chapter=document.getElementById('addQChapter').value.trim();
+
+function addSection(){
   const type=document.getElementById('addQType').value.trim();
-  if(!stuId||!chapter||!type){showToast('Sab fields bharo');return;}
+  if(!type){showToast('Section type likho');return;}
   let nums=[];
   if(rangeMode==='single'){
     nums=document.getElementById('addQNums').value.split(',').map(n=>n.trim()).filter(Boolean);
@@ -819,15 +953,57 @@ function addQuestions(){
     if(isNaN(from)||isNaN(to)||from>to){showToast('Valid range do');return;}
     for(let i=from;i<=to;i++)nums.push(String(i));
   }
-  const qs=S.questions();let added=0,skipped=0;
-  for(const num of nums){
-    const id=`${stuId}__${chapter}__${type}__${num}`;
-    if(qs[id]){skipped++;continue;}
-    qs[id]={student:stuId,chapter,type,num,interval:2,correct:0,wrong:0,lastDate:null,level:null,step:0};added++;
+  pendingSections.push({type,nums});
+  document.getElementById('addQType').value='';
+  document.getElementById('addQNums').value='';
+  document.getElementById('addRangeFrom').value='';
+  document.getElementById('addRangeTo').value='';
+  renderSectionsList();
+  showToast(`✅ Section add ho gaya (${nums.length} questions)`);
+}
+
+function renderSectionsList(){
+  const el=document.getElementById('sectionsList');
+  const btn=document.getElementById('saveChapterBtn');
+  if(!pendingSections.length){el.innerHTML='';if(btn)btn.style.display='none';return;}
+  if(btn)btn.style.display='';
+  el.innerHTML=pendingSections.map((s,i)=>`
+    <div class="section-item">
+      <div>
+        <div class="section-item-info">${s.type}</div>
+        <div class="section-item-meta">${s.nums.length} questions: Q${s.nums.join(', Q')}</div>
+      </div>
+      <button class="btn-sm btn-sm-danger" onclick="removeSection(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeSection(i){
+  pendingSections.splice(i,1);
+  renderSectionsList();
+}
+
+function saveChapter(){
+  const stuId=document.getElementById('addQStu').value;
+  const bookId=document.getElementById('addQBook').value;
+  const chapter=document.getElementById('addQChapter').value.trim();
+  if(!stuId||!bookId||!chapter){showToast('Student, book aur chapter bharo');return;}
+  if(!pendingSections.length){showToast('Kam se kam ek section add karo');return;}
+
+  const qs=S.questions();
+  let added=0,skipped=0;
+  for(const sec of pendingSections){
+    for(const num of sec.nums){
+      const id=`${stuId}__${bookId}__${chapter}__${sec.type}__${num}`;
+      if(qs[id]){skipped++;continue;}
+      qs[id]={student:stuId,book:bookId,chapter,type:sec.type,num,interval:2,correct:0,wrong:0,lastDate:null,level:null,step:0};
+      added++;
+    }
   }
   S.setQuestions(qs);
-  showToast(`✅ ${added} add hue${skipped?`, ${skipped} already the`:''}`);
-  ['addQChapter','addQType','addQNums','addRangeFrom','addRangeTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  pendingSections=[];
+  renderSectionsList();
+  document.getElementById('addQChapter').value='';
+  showToast(`✅ ${added} questions save ho gaye${skipped?`, ${skipped} already the`:''}`);
   renderBrowse();
 }
 function renderBrowse(){
@@ -835,37 +1011,57 @@ function renderBrowse(){
   if(!all.length){document.getElementById('browseCard').style.display='none';return;}
   document.getElementById('browseCard').style.display='';
   const stuMap=Object.fromEntries(S.students().map(s=>[s.id,s]));
+  const booksAll=BS.all();
+  // Build bookMap: stuId → {bookId → bookName}
+  const bookMap={};
+  for(const[sid,books]of Object.entries(booksAll)){
+    bookMap[sid]={};
+    for(const b of books) bookMap[sid][b.id]=b.name;
+  }
   const tree={};
   for(const[id,q]of all){
-    const key=`${q.student}||${q.chapter}||${q.type}`;
-    if(!tree[key])tree[key]={student:q.student,chapter:q.chapter,type:q.type,items:[]};
+    const key=`${q.student}||${q.book||''}||${q.chapter}||${q.type}`;
+    if(!tree[key])tree[key]={student:q.student,book:q.book||null,chapter:q.chapter,type:q.type,items:[]};
     tree[key].items.push({id,num:q.num,level:q.level||null});
   }
-  let html='',lastStu='';
+  let html='',lastStu='',lastBook='';
   for(const[,grp]of Object.entries(tree)){
     const stu=stuMap[grp.student]||{name:grp.student,cls:'?'};
     if(grp.student!==lastStu){
       html+=`<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;padding:10px 0 4px;">${stu.name} — Class ${stu.cls}</div>`;
-      lastStu=grp.student;
+      lastStu=grp.student; lastBook='';
+    }
+    const bookName=grp.book?(bookMap[grp.student]?.[grp.book]||grp.book):'—';
+    if(grp.book!==lastBook){
+      html+=`<div style="font-size:12px;font-weight:700;color:var(--blue);padding:6px 0 2px;">📚 ${bookName}</div>`;
+      lastBook=grp.book;
     }
     html+=`<div class="acc-item">
       <div class="acc-header" onclick="this.parentElement.classList.toggle('open')">
-        <span>${grp.chapter} · ${grp.type} <span class="badge badge-accent">${grp.items.length}</span></span>
+        <span style="flex:1;min-width:0;">${grp.chapter} · ${grp.type} <span class="badge badge-accent">${grp.items.length}</span></span>
         <span class="acc-arrow">▶</span>
       </div>
       <div class="acc-body">
         <div class="q-grid">${grp.items.map(i=>`<span class="q-chip">${i.num} <span class="lv-badge lv-badge-${i.level||'null'}" style="font-size:9px;">${lvInfo(i.level).short}</span></span>`).join('')}</div>
-        <div style="margin-top:8px;"><button class="btn-sm btn-sm-danger" onclick="deleteGroup('${grp.student}','${grp.chapter}','${grp.type}')">🗑️ Delete</button></div>
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn-sm btn-sm-ghost" onclick="resetGroupProgress('${grp.student}','${grp.book||''}','${grp.chapter}','${grp.type}')">🔄 Sab Unused Karo</button>
+        </div>
       </div>
     </div>`;
   }
   document.getElementById('browseList').innerHTML=html;
 }
-function deleteGroup(stuId,chapter,type){
-  if(!confirm(`"${chapter} > ${type}" delete hoga. OK?`))return;
+function resetGroupProgress(stuId,bookId,chapter,type){
+  if(!confirm(`"${chapter} > ${type}" ke saare questions unused ho jayenge. OK?`))return;
   const qs=S.questions();
-  for(const id of Object.keys(qs)){if(qs[id].student===stuId&&qs[id].chapter===chapter&&qs[id].type===type)delete qs[id];}
-  S.setQuestions(qs);showToast('Delete ho gaya');renderBrowse();
+  for(const id of Object.keys(qs)){
+    const q=qs[id];
+    if(q.student===stuId&&(q.book||'')===bookId&&q.chapter===chapter&&q.type===type){
+      q.lastDate=null; q.step=0; q.correct=0; q.wrong=0;
+      q.interval=lvStepInterval(q.level||null,0);
+    }
+  }
+  S.setQuestions(qs);showToast('✅ Questions unused ho gaye');renderBrowse();
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────
@@ -1044,7 +1240,7 @@ function renderSettings(){
   document.getElementById('stuList').innerHTML=students.length
     ?students.map(s=>`<div class="stu-item">
         <div><div class="stu-name">${s.name}</div><div class="stu-meta">Class ${s.cls}</div></div>
-        <button class="btn-sm btn-sm-danger" onclick="deleteStu('${s.id}')">Delete</button>
+        <span style="font-size:11px;color:var(--text-muted);">${Object.values(S.questions()).filter(q=>q.student===s.id).length} Qs</span>
       </div>`).join('')
     :'<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">Koi student nahi</div>';
   const gc=GH.config()||{};
@@ -1063,12 +1259,7 @@ function saveSettings(){
   S.setSettings({dailyCount:parseInt(document.getElementById('setCount').value)||20,mix});
   showToast('✅ Save ho gaya!');
 }
-function deleteStu(id){
-  if(!confirm('Student aur saare questions delete honge. Sure?'))return;
-  S.setStudents(S.students().filter(s=>s.id!==id));
-  const qs=S.questions();for(const qid of Object.keys(qs)){if(qs[qid].student===id)delete qs[qid];}
-  S.setQuestions(qs);showToast('Delete ho gaya');renderSettings();
-}
+// deleteStu removed — no delete option
 function resetProgress(){
   if(!confirm('Saara progress reset hoga. Questions + Levels rahenge. OK?'))return;
   const qs=S.questions();
@@ -1080,7 +1271,7 @@ function resetProgress(){
 }
 function resetAll(){
   if(!confirm('SABKUCH DELETE — students, questions, progress. Bilkul sure?'))return;
-  ['qb_s','qb_q','qb_cfg','qb_today','qb_streak','qb_hist'].forEach(k=>localStorage.removeItem(k));
+  ['qb_s','qb_q','qb_cfg','qb_today','qb_streak','qb_hist','qb_books'].forEach(k=>localStorage.removeItem(k));
   activeHomeStu=null;activeStatsStu=null;activeCalStu=null;
   showToast('Sab reset ho gaya');renderSettings();renderHome();
 }
@@ -1098,7 +1289,7 @@ async function ghPush(){
     const headers=ghHeaders(),url=ghApiUrl();
     let sha=null;
     try{const r=await fetch(url+'?ref='+(c.branch||'main'),{headers});if(r.ok){const d=await r.json();sha=d.sha;}}catch{}
-    const data={students:S.students(),questions:S.questions(),settings:S.settings(),streak:S.streak(),history:S.history(),synced:new Date().toISOString(),version:2};
+    const data={students:S.students(),questions:S.questions(),books:BS.all(),settings:S.settings(),streak:S.streak(),history:S.history(),synced:new Date().toISOString(),version:3};
     const body={message:'QBank sync '+ds(),content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2)))),branch:c.branch||'main'};
     if(sha)body.sha=sha;
     const res=await fetch(url,{method:'PUT',headers,body:JSON.stringify(body)});
@@ -1124,6 +1315,7 @@ async function ghPull(){
     if(content.settings)S.setSettings(content.settings);
     if(content.streak)S.setStreak(content.streak);
     if(content.history)localStorage.setItem('qb_hist',JSON.stringify(content.history));
+    if(content.books)localStorage.setItem('qb_books',JSON.stringify(content.books));
     localStorage.removeItem('qb_today');
     ghSetStatus('✅ Load ho gaya! '+new Date().toLocaleTimeString('hi-IN'),'var(--green)');
     showToast('⬇️ Data load ho gaya!');renderHome();
@@ -1146,7 +1338,7 @@ function saveGhConfig(){
 
 // ── BACKUP ────────────────────────────────────────────────────
 function exportData(){
-  const data={students:S.students(),questions:S.questions(),settings:S.settings(),streak:S.streak(),history:S.history(),exported:new Date().toISOString(),version:2};
+  const data={students:S.students(),questions:S.questions(),books:BS.all(),settings:S.settings(),streak:S.streak(),history:S.history(),exported:new Date().toISOString(),version:3};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`qbank-backup-${ds()}.json`;a.click();
@@ -1164,6 +1356,7 @@ function importData(event){
       if(data.settings)S.setSettings(data.settings);
       if(data.streak)S.setStreak(data.streak);
       if(data.history)localStorage.setItem('qb_hist',JSON.stringify(data.history));
+      if(data.books)localStorage.setItem('qb_books',JSON.stringify(data.books));
       localStorage.removeItem('qb_today');
       showToast('✅ Import ho gaya!');renderHome();
     }catch(err){showToast('❌ Invalid file: '+err.message);}
