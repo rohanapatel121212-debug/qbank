@@ -15,44 +15,71 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0d1117; --surface: #161b22; --surface2: #21262d; --border: #30363d;
-      --accent: #f0a500; --accent-dim: rgba(240,165,0,0.12);
-      --green: #3fb950; --red: #f85149; --blue: #58a6ff; --purple: #bc8cff;
-      --text: #e6edf3; --text-muted: #8b949e; --radius: 12px;
+      --bg:#0d1117; --surface:#161b22; --surface2:#21262d; --border:#30363d;
+      --accent:#f0a500; --accent-dim:rgba(240,165,0,0.12);
+      --green:#3fb950; --red:#f85149; --blue:#58a6ff; --purple:#bc8cff;
+      --text:#e6edf3; --text-muted:#8b949e; --radius:12px;
       --lv0:#6e7681; --lv1:#58a6ff; --lv2:#f0a500; --lv3:#3fb950; --lvE:#bc8cff;
+      --nav-h:64px;
     }
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
-    header{padding:18px 20px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;}
-    .logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;flex-shrink:0;}
-    .logo span{color:var(--accent);}
-    .header-right{display:flex;align-items:center;gap:8px;}
-    .date-pill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text-muted);}
-    .streak-pill{background:rgba(240,165,0,.12);border:1px solid var(--accent);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--accent);}
+    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;padding-bottom:var(--nav-h);}
 
-    /* TABS */
-    .tab-bar{display:flex;margin:14px 20px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;gap:3px;}
-    .tab-btn{flex:1;padding:8px 2px;border:none;background:none;color:var(--text-muted);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:500;border-radius:9px;cursor:pointer;transition:all .2s;}
-    .tab-btn.active{background:var(--accent);color:#000;font-weight:700;}
-    .content{flex:1;padding:14px 20px 24px;overflow-y:auto;}
+    /* TOP HEADER */
+    .top-header{padding:20px 20px 0;display:flex;justify-content:space-between;align-items:flex-start;}
+    .greeting-sub{font-size:13px;color:var(--text-muted);margin-bottom:2px;}
+    .greeting-name{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--text);}
+    .greeting-name span{color:var(--accent);}
+    .header-icons{display:flex;gap:10px;align-items:center;margin-top:4px;}
+    .streak-pill{background:rgba(240,165,0,.12);border:1px solid var(--accent);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--accent);}
+    .sync-dot{width:9px;height:9px;border-radius:50%;background:var(--green);cursor:pointer;display:none;}
+
+    /* BOTTOM NAV */
+    .bottom-nav{
+      position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+      width:100%;max-width:480px;
+      height:var(--nav-h);
+      background:var(--surface);
+      border-top:1px solid var(--border);
+      display:flex;
+      z-index:100;
+    }
+    .nav-btn{
+      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:3px;border:none;background:none;color:var(--text-muted);
+      font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:500;
+      cursor:pointer;transition:color .2s;padding:8px 0;
+    }
+    .nav-btn .nav-icon{font-size:20px;line-height:1;}
+    .nav-btn.active{color:var(--accent);}
+    .nav-btn.active .nav-icon{transform:scale(1.1);}
+
+    /* CONTENT */
+    .content{flex:1;padding:14px 20px 20px;overflow-y:auto;}
     .tab-panel{display:none;} .tab-panel.active{display:block;}
 
     /* CARDS */
     .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;}
     .card-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
 
-    /* PROGRESS */
-    .prog-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
-    .prog-label{font-size:13px;color:var(--text-muted);}
-    .prog-count{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--accent);}
-    .prog-total{font-size:13px;color:var(--text-muted);}
-    .prog-bar-wrap{background:var(--surface2);border-radius:99px;height:5px;overflow:hidden;}
-    .prog-bar{height:100%;background:var(--accent);border-radius:99px;transition:width .4s;}
+    /* HOME STATS GRID */
+    .home-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+    .home-stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+    .home-stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;}
+    .home-stat-lbl{font-size:12px;color:var(--text-muted);margin-top:2px;}
 
-    /* STUDENT CHIPS */
+    /* STUDENT SELECTOR */
     .stu-row{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
     .stu-chip{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;}
     .stu-chip.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+
+    /* PROGRESS */
+    .prog-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+    .prog-label{font-size:13px;color:var(--text-muted);}
+    .prog-count{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent);}
+    .prog-total{font-size:13px;color:var(--text-muted);}
+    .prog-bar-wrap{background:var(--surface2);border-radius:99px;height:6px;overflow:hidden;}
+    .prog-bar{height:100%;background:var(--accent);border-radius:99px;transition:width .4s;}
 
     /* Q LIST */
     .q-list{display:flex;flex-direction:column;gap:8px;}
@@ -68,13 +95,12 @@
     .q-actions{display:flex;gap:6px;flex-shrink:0;}
     .btn-mark{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
     .btn-mark:hover{transform:scale(1.1);}
-    .btn-correct{color:var(--green);}  .btn-correct.active{background:rgba(63,185,80,.2);border-color:var(--green);}
-    .btn-wrong{color:var(--red);}      .btn-wrong.active{background:rgba(248,81,73,.2);border-color:var(--red);}
+    .btn-correct{color:var(--green);} .btn-correct.active{background:rgba(63,185,80,.2);border-color:var(--green);}
+    .btn-wrong{color:var(--red);}    .btn-wrong.active{background:rgba(248,81,73,.2);border-color:var(--red);}
 
-    /* LEVEL BUTTONS — bigger for mobile */
+    /* LEVEL BUTTONS */
     .q-level-row{display:flex;gap:5px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
     .lv-btn{flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;color:var(--text-muted);text-align:center;transition:all .15s;white-space:nowrap;}
-    .lv-btn:hover{border-color:var(--text-muted);color:var(--text);}
     .lv-btn.active-lv0{background:rgba(110,118,129,.2);border-color:var(--lv0);color:var(--lv0);}
     .lv-btn.active-lv1{background:rgba(88,166,255,.15);border-color:var(--lv1);color:var(--lv1);}
     .lv-btn.active-lv2{background:rgba(240,165,0,.15);border-color:var(--lv2);color:var(--lv2);}
@@ -90,20 +116,48 @@
     .lv-badge-lv3{background:rgba(63,185,80,.12);border-color:var(--lv3);color:var(--lv3);}
     .lv-badge-lvE{background:rgba(188,140,255,.12);border-color:var(--lvE);color:var(--lvE);}
 
-    /* EMPTY */
-    .empty-state{text-align:center;padding:40px 16px;color:var(--text-muted);}
-    .empty-icon{font-size:38px;margin-bottom:10px;}
-    .empty-title{font-family:'Syne',sans-serif;font-size:17px;color:var(--text);margin-bottom:6px;}
-    .empty-sub{font-size:12px;line-height:1.7;}
+    /* CALENDAR */
+    .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .cal-month{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;}
+    .cal-nav-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+    .cal-day-hdr{text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);padding:4px 0;}
+    .cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;font-size:12px;font-weight:500;cursor:default;position:relative;gap:2px;}
+    .cal-day.today{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);font-weight:800;}
+    .cal-day.empty{opacity:0;}
+    .cal-day.done{background:rgba(63,185,80,.12);}
+    .cal-day.partial{background:rgba(240,165,0,.1);}
+    .cal-day.missed{opacity:.4;}
+    .cal-dot{width:5px;height:5px;border-radius:50%;}
+    .cal-dot-green{background:var(--green);}
+    .cal-dot-yellow{background:var(--accent);}
+
+    /* MONTHLY SUMMARY */
+    .month-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+    .month-stat{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+    .month-stat-num{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
+    .month-stat-lbl{font-size:10px;color:var(--text-muted);margin-top:2px;}
+
+    /* DONE BANNER */
+    .done-banner{background:rgba(63,185,80,.1);border:1px solid var(--green);border-radius:var(--radius);padding:12px;text-align:center;color:var(--green);font-weight:600;font-size:14px;margin-bottom:10px;}
+
+    /* ALERT */
+    .alert-box{border-radius:var(--radius);padding:10px 14px;margin-bottom:10px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;}
+    .alert-warn{background:rgba(240,165,0,.1);border:1px solid rgba(240,165,0,.3);color:var(--accent);}
+
+    /* LEGEND */
+    .legend{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+    .leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);}
+    .leg-dot{width:7px;height:7px;border-radius:50%;}
 
     /* BUTTONS */
     .btn{display:block;width:100%;padding:12px;border-radius:var(--radius);border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .18s;}
     .btn+.btn{margin-top:8px;}
-    .btn-primary{background:var(--accent);color:#000;} .btn-primary:hover{opacity:.9;transform:translateY(-1px);}
+    .btn-primary{background:var(--accent);color:#000;} .btn-primary:hover{opacity:.9;}
     .btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text);}
     .btn-danger{background:rgba(248,81,73,.12);border:1px solid var(--red);color:var(--red);}
     .btn-green{background:rgba(63,185,80,.15);border:1px solid var(--green);color:var(--green);}
-    .btn-sm{padding:6px 12px;border-radius:7px;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+    .btn-sm{padding:6px 12px;border-radius:7px;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;}
     .btn-sm-danger{background:rgba(248,81,73,.12);border:1px solid var(--red);color:var(--red);}
     .btn-sm-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text);}
 
@@ -125,15 +179,15 @@
     .stat-lbl{font-size:11px;color:var(--text-muted);margin-top:2px;}
     .n-yellow{color:var(--accent);} .n-green{color:var(--green);} .n-red{color:var(--red);}
 
-    /* LEVEL DISTRIBUTION */
+    /* LEVEL DIST */
     .lv-dist-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
     .lv-dist-row{display:flex;align-items:center;gap:10px;}
     .lv-dist-label{font-size:11px;font-weight:700;min-width:70px;flex-shrink:0;}
-    .lv-dist-bar-wrap{flex:1;background:var(--surface2);border-radius:99px;height:8px;overflow:hidden;}
+    .lv-dist-bar-wrap{flex:1;background:var(--surface2);border-radius:99px;height:7px;overflow:hidden;}
     .lv-dist-bar{height:100%;border-radius:99px;transition:width .5s;}
     .lv-dist-count{font-size:11px;font-weight:700;min-width:28px;text-align:right;flex-shrink:0;}
 
-    /* CHAPTER ACCORDION */
+    /* ACCORDION */
     .section-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;}
     .acc-item{border-bottom:1px solid var(--border);}
     .acc-item:last-child{border-bottom:none;}
@@ -143,8 +197,6 @@
     .acc-body{display:none;padding-bottom:10px;}
     .acc-item.open .acc-arrow{transform:rotate(90deg);}
     .acc-item.open .acc-body{display:block;}
-
-    /* CHAPTER PROGRESS BAR */
     .ch-prog-wrap{background:var(--surface2);border-radius:99px;height:4px;overflow:hidden;margin:6px 0 8px;}
     .ch-prog-bar{height:100%;border-radius:99px;background:var(--green);transition:width .4s;}
 
@@ -153,93 +205,89 @@
     .badge-green{background:rgba(63,185,80,.12);color:var(--green);}
     .badge-blue{background:rgba(88,166,255,.12);color:var(--blue);}
 
-    /* Q GRID */
-    .q-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
-    .q-chip{padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);}
-
     /* SEARCH */
     .search-wrap{position:relative;margin-bottom:12px;}
     .search-input{width:100%;padding:9px 12px 9px 34px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
     .search-input:focus{border-color:var(--accent);}
     .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;}
 
-    /* LEVEL FILTER */
+    /* LV FILTER */
     .lv-filter-row{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;}
     .lv-fc{flex-shrink:0;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
 
-    /* UNASSIGNED ALERT */
-    .alert-box{border-radius:var(--radius);padding:10px 14px;margin-bottom:10px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;}
-    .alert-warn{background:rgba(240,165,0,.1);border:1px solid rgba(240,165,0,.3);color:var(--accent);}
+    /* Q GRID */
+    .q-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+    .q-chip{padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);}
 
-    /* DONE BANNER */
-    .done-banner{background:rgba(63,185,80,.1);border:1px solid var(--green);border-radius:var(--radius);padding:12px;text-align:center;color:var(--green);font-weight:600;font-size:14px;margin-bottom:10px;}
-
-    .legend{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
-    .leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);}
-    .leg-dot{width:7px;height:7px;border-radius:50%;}
-
-    .stu-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
-    .stu-item:last-child{border-bottom:none;}
-    .stu-name{font-size:14px;font-weight:600;}
-    .stu-meta{font-size:11px;color:var(--text-muted);margin-top:1px;}
-
-    hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
-
-    /* LEVEL MIX SETTINGS */
+    /* SETTINGS */
     .mix-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
     .mix-item{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px;}
     .mix-label{font-size:11px;font-weight:700;margin-bottom:6px;}
     .mix-input{width:100%;background:none;border:none;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;outline:none;text-align:center;}
+    .stu-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+    .stu-item:last-child{border-bottom:none;}
+    .stu-name{font-size:14px;font-weight:600;}
+    .stu-meta{font-size:11px;color:var(--text-muted);margin-top:1px;}
+    hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
+
+    /* EMPTY */
+    .empty-state{text-align:center;padding:40px 16px;color:var(--text-muted);}
+    .empty-icon{font-size:40px;margin-bottom:10px;}
+    .empty-title{font-family:'Syne',sans-serif;font-size:17px;color:var(--text);margin-bottom:6px;}
+    .empty-sub{font-size:12px;line-height:1.7;}
 
     /* TOAST */
-    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:500;transition:transform .3s;z-index:999;white-space:nowrap;}
+    .toast{position:fixed;bottom:calc(var(--nav-h) + 12px);left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:500;transition:transform .3s;z-index:999;white-space:nowrap;}
     .toast.show{transform:translateX(-50%) translateY(0);}
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">Q<span>Bank</span></div>
-  <div class="header-right">
-    <div class="streak-pill" id="streakPill" style="display:none">🔥 <span id="streakCount">0</span></div>
-    <div id="syncDot" title="GitHub sync" style="display:none;width:8px;height:8px;border-radius:50%;background:var(--green);cursor:pointer;" onclick="switchTab('settings')"></div>
-    <div class="date-pill" id="headerDate">—</div>
+<!-- TOP HEADER -->
+<div class="top-header" id="topHeader">
+  <div>
+    <div class="greeting-sub" id="greetingSub">Good Morning</div>
+    <div class="greeting-name" id="greetingName">Q<span>Bank</span></div>
   </div>
-</header>
-
-<div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('today')">📋 Aaj</button>
-  <button class="tab-btn" onclick="switchTab('add')">➕ Add</button>
-  <button class="tab-btn" onclick="switchTab('stats')">📊 Stats</button>
-  <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings</button>
+  <div class="header-icons">
+    <div class="streak-pill" id="streakPill" style="display:none">🔥 <span id="streakCount">0</span> din</div>
+    <div class="sync-dot" id="syncDot" title="Sync ready" onclick="switchTab('settings')"></div>
+  </div>
 </div>
 
+<!-- CONTENT -->
 <div class="content">
 
-  <!-- ===== AAJ ===== -->
-  <div class="tab-panel active" id="panel-today">
-    <div id="todayEmpty" class="empty-state" style="display:none">
+  <!-- ===== HOME ===== -->
+  <div class="tab-panel active" id="panel-home">
+    <div id="homeEmpty" class="empty-state" style="display:none">
       <div class="empty-icon">📚</div>
-      <div class="empty-title">Koi question nahi</div>
-      <div class="empty-sub">"Add" tab mein jaao,<br>pehle student banao, phir questions add karo.</div>
+      <div class="empty-title">Shuru karo!</div>
+      <div class="empty-sub">Neeche ➕ dabao,<br>student banao aur questions add karo.</div>
     </div>
-    <div id="todayMain" style="display:none">
-      <div class="stu-row" id="todayStuRow"></div>
-      <div id="unassignedAlert" style="display:none"></div>
+    <div id="homeMain" style="display:none">
+      <div class="stu-row" id="homeStuRow"></div>
+
+      <!-- Today progress card -->
       <div class="card">
         <div class="prog-row">
-          <div class="prog-label">Aaj complete</div>
-          <div><span class="prog-count" id="doneCount">0</span><span class="prog-total"> / <span id="totalCount">0</span></span></div>
+          <div class="prog-label">Aaj ka progress</div>
+          <div><span class="prog-count" id="homeDone">0</span><span class="prog-total"> / <span id="homeTotal">0</span></span></div>
         </div>
-        <div class="prog-bar-wrap"><div class="prog-bar" id="progBar" style="width:0%"></div></div>
+        <div class="prog-bar-wrap"><div class="prog-bar" id="homeProgBar" style="width:0%"></div></div>
       </div>
-      <div id="doneBanner" class="done-banner" style="display:none">🎉 Aaj ke saare ho gaye! Kal naya list milega.</div>
+
+      <div id="homeDoneBanner" class="done-banner" style="display:none">🎉 Aaj ke saare ho gaye! Kal naya list milega.</div>
+      <div id="homeUnassigned" style="display:none"></div>
+
       <div class="legend">
         <div class="leg-item"><div class="leg-dot p-wrong"></div> Galat (priority)</div>
         <div class="leg-item"><div class="leg-dot p-due"></div> SRS due</div>
         <div class="leg-item"><div class="leg-dot p-new"></div> Naya</div>
       </div>
-      <div class="q-list" id="qList"></div>
+
+      <div class="q-list" id="homeQList"></div>
+
       <div style="margin-top:12px;">
         <button class="btn btn-ghost" onclick="regenerate()">🔄 Naya List Banao</button>
       </div>
@@ -287,6 +335,43 @@
     </div>
   </div>
 
+  <!-- ===== CALENDAR ===== -->
+  <div class="tab-panel" id="panel-calendar">
+    <div class="stu-row" id="calStuRow"></div>
+
+    <div class="card">
+      <div class="cal-header">
+        <button class="cal-nav-btn" onclick="calPrevMonth()">‹</button>
+        <div class="cal-month" id="calMonthLabel">—</div>
+        <button class="cal-nav-btn" onclick="calNextMonth()">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;">
+        <div class="leg-item"><div class="cal-dot cal-dot-green" style="width:8px;height:8px;border-radius:50%;"></div> Complete</div>
+        <div class="leg-item"><div class="cal-dot cal-dot-yellow" style="width:8px;height:8px;border-radius:50%;"></div> Partial</div>
+        <div class="leg-item"><div style="width:8px;height:8px;border-radius:50%;background:var(--border);"></div> Miss</div>
+      </div>
+    </div>
+
+    <!-- Monthly summary -->
+    <div class="card">
+      <div class="card-title">📊 Is Mahine ka Summary</div>
+      <div class="month-stats">
+        <div class="month-stat"><div class="month-stat-num n-green" id="mDays">0</div><div class="month-stat-lbl">Active Din</div></div>
+        <div class="month-stat"><div class="month-stat-num n-yellow" id="mQDone">0</div><div class="month-stat-lbl">Questions</div></div>
+        <div class="month-stat"><div class="month-stat-num" id="mStreak" style="color:var(--accent)">0</div><div class="month-stat-lbl">🔥 Streak</div></div>
+      </div>
+    </div>
+
+    <!-- Day detail -->
+    <div class="card" id="calDayDetail" style="display:none">
+      <div class="card-title" id="calDayTitle">—</div>
+      <div id="calDayBody"></div>
+    </div>
+  </div>
+
   <!-- ===== STATS ===== -->
   <div class="tab-panel" id="panel-stats">
     <div class="stu-row" id="statsStuRow"></div>
@@ -330,7 +415,7 @@
       <div class="field">
         <div class="field-label">GitHub Token (ghp_...)</div>
         <input class="field-input" type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx" />
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Settings → Developer settings → Personal access tokens → repo scope chahiye</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Settings → Developer settings → Personal access tokens → repo scope</div>
       </div>
       <div class="row-2">
         <div class="field"><div class="field-label">Owner</div><input class="field-input" id="ghOwner" placeholder="rohanapatel121212-debug" /></div>
@@ -367,32 +452,68 @@
   </div>
 
 </div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-home" onclick="switchTab('home')">
+    <span class="nav-icon">🏠</span><span>Home</span>
+  </button>
+  <button class="nav-btn" id="nav-add" onclick="switchTab('add')">
+    <span class="nav-icon">➕</span><span>Add</span>
+  </button>
+  <button class="nav-btn" id="nav-calendar" onclick="switchTab('calendar')">
+    <span class="nav-icon">📅</span><span>Calendar</span>
+  </button>
+  <button class="nav-btn" id="nav-stats" onclick="switchTab('stats')">
+    <span class="nav-icon">📊</span><span>Stats</span>
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="switchTab('settings')">
+    <span class="nav-icon">⚙️</span><span>Settings</span>
+  </button>
+</nav>
+
 <div class="toast" id="toast"></div>
 
 <script>
 // ── LEVELS ────────────────────────────────────────────────────
-const LEVELS = [
-  { key:'lv0', label:'Zero Level', short:'Zero', color:'#6e7681', interval:1  },
-  { key:'lv1', label:'Level 1',    short:'Lv 1', color:'#58a6ff', interval:2  },
-  { key:'lv2', label:'Level 2',    short:'Lv 2', color:'#f0a500', interval:4  },
-  { key:'lv3', label:'Level 3',    short:'Lv 3', color:'#3fb950', interval:7  },
-  { key:'lvE', label:'Exam Level', short:'Exam', color:'#bc8cff', interval:14 },
+// Base sequence: [2,4,7,14] days
+// Multiplier per level → step intervals
+// Zero Level = skip (never in daily list)
+const BASE_SEQ = [2, 4, 7, 14];
+const LEVELS=[
+  {key:'lv0',label:'Zero Level',short:'Zero',color:'#6e7681',mult:0,   skip:true},
+  {key:'lv1',label:'Level 1',   short:'Lv 1',color:'#58a6ff',mult:4,   skip:false},
+  {key:'lv2',label:'Level 2',   short:'Lv 2',color:'#f0a500',mult:3,   skip:false},
+  {key:'lv3',label:'Level 3',   short:'Lv 3',color:'#3fb950',mult:2,   skip:false},
+  {key:'lvE',label:'Exam Level',short:'Exam', color:'#bc8cff',mult:1,   skip:false},
 ];
-// null = unassigned = treat as daily (interval 1)
-function lvInfo(key){ return LEVELS.find(l=>l.key===key)||{key:null,label:'Unset',short:'—',color:'#6e7681',interval:1}; }
-function lvInterval(key){ return lvInfo(key).interval; }
+function lvInfo(k){return LEVELS.find(l=>l.key===k)||{key:null,label:'Unset',short:'—',color:'#6e7681',mult:1,skip:false};}
+
+// Get interval for a given level + step (step = 0,1,2,3)
+function lvStepInterval(lvKey, step){
+  const lv = lvInfo(lvKey);
+  if(lv.skip) return 9999; // skip
+  const s = Math.min(Math.max(step||0, 0), BASE_SEQ.length-1);
+  return BASE_SEQ[s] * lv.mult;
+}
+
+// Legacy compat
+function lvInterval(k){ return lvStepInterval(k, 0); }
 
 // ── STORAGE ───────────────────────────────────────────────────
-const S = {
-  students()     { try{return JSON.parse(localStorage.getItem('qb_s')||'[]');}catch{return[];} },
-  setStudents(v) { localStorage.setItem('qb_s',JSON.stringify(v)); },
-  questions()    { try{return JSON.parse(localStorage.getItem('qb_q')||'{}');}catch{return{};} },
-  setQuestions(v){ localStorage.setItem('qb_q',JSON.stringify(v)); },
-  settings()     { try{return JSON.parse(localStorage.getItem('qb_cfg')||'null')||defSettings();}catch{return defSettings();} },
-  setSettings(v) { localStorage.setItem('qb_cfg',JSON.stringify(v)); },
-  streak()       { try{return JSON.parse(localStorage.getItem('qb_streak')||'null')||{count:0,last:''};}catch{return{count:0,last:''};} },
-  setStreak(v)   { localStorage.setItem('qb_streak',JSON.stringify(v)); },
-  today() {
+const S={
+  students()    {try{return JSON.parse(localStorage.getItem('qb_s')||'[]');}catch{return[];}},
+  setStudents(v){localStorage.setItem('qb_s',JSON.stringify(v));},
+  questions()   {try{return JSON.parse(localStorage.getItem('qb_q')||'{}');}catch{return{};}},
+  setQuestions(v){localStorage.setItem('qb_q',JSON.stringify(v));},
+  settings()    {try{return JSON.parse(localStorage.getItem('qb_cfg')||'null')||defSettings();}catch{return defSettings();}},
+  setSettings(v){localStorage.setItem('qb_cfg',JSON.stringify(v));},
+  streak()      {try{return JSON.parse(localStorage.getItem('qb_streak')||'null')||{count:0,last:''};} catch{return{count:0,last:''};} },
+  setStreak(v)  {localStorage.setItem('qb_streak',JSON.stringify(v));},
+  // history: { "2026-03-28": { stuId: { done:10, total:20, correct:8, wrong:2 } } }
+  history()     {try{return JSON.parse(localStorage.getItem('qb_hist')||'{}');}catch{return{};}},
+  setHistory(v) {localStorage.setItem('qb_hist',JSON.stringify(v));},
+  today(){
     try{
       const t=JSON.parse(localStorage.getItem('qb_today')||'null');
       if(!t)return{};
@@ -400,186 +521,194 @@ const S = {
       return t.data||{};
     }catch{return{};}
   },
-  setToday(v){ localStorage.setItem('qb_today',JSON.stringify({date:ds(),data:v})); },
+  setToday(v){localStorage.setItem('qb_today',JSON.stringify({date:ds(),data:v}));},
+};
+const GH={
+  config(){try{return JSON.parse(localStorage.getItem('qb_gh')||'null');}catch{return null;}},
+  setConfig(v){localStorage.setItem('qb_gh',JSON.stringify(v));},
 };
 
-function defSettings(){ return {dailyCount:20, mix:{lv0:0,lv1:0,lv2:0,lv3:0,lvE:0}}; }
-function ds(){ return new Date().toISOString().split('T')[0]; }
-function daysSince(d){ return Math.floor((new Date(ds())-new Date(d))/86400000); }
+function defSettings(){return{dailyCount:20,mix:{lv0:0,lv1:0,lv2:0,lv3:0,lvE:0}};}
+function ds(){return new Date().toISOString().split('T')[0];}
+function daysSince(d){return Math.floor((new Date(ds())-new Date(d))/86400000);}
 
-let activeTodayStu=null, activeStatsStu=null, rangeMode='single', activeStatLv='all';
+let activeHomeStu=null,activeStatsStu=null,activeCalStu=null,rangeMode='single',activeStatLv='all';
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+
+// ── GREETING ──────────────────────────────────────────────────
+function greeting(){
+  const h=new Date().getHours();
+  if(h<12) return'Good Morning';
+  if(h<17) return'Good Afternoon';
+  if(h<21) return'Good Evening';
+  return'Good Night';
+}
 
 // ── TAB ───────────────────────────────────────────────────────
+const TABS=['home','add','calendar','stats','settings'];
 function switchTab(tab){
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['today','add','stats','settings'][i]===tab));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('panel-'+tab).classList.add('active');
-  if(tab==='today')    renderToday();
+  TABS.forEach(t=>{
+    document.getElementById('panel-'+t).classList.toggle('active',t===tab);
+    document.getElementById('nav-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='home')     renderHome();
   if(tab==='add')      renderAdd();
+  if(tab==='calendar') renderCalendar();
   if(tab==='stats')    renderStats();
   if(tab==='settings') renderSettings();
 }
 
 // ── STREAK ────────────────────────────────────────────────────
-function updateStreak(completed){
-  if(!completed) return;
-  const str=S.streak();
-  const yest=new Date(); yest.setDate(yest.getDate()-1);
-  const yesterdayStr=yest.toISOString().split('T')[0];
-  if(str.last===ds()) return; // already counted today
-  if(str.last===yesterdayStr) str.count++;
-  else if(str.last!==ds()) str.count=1;
-  str.last=ds();
-  S.setStreak(str);
-  renderStreak();
-}
-function renderStreak(){
+function checkStreak(){
   const str=S.streak();
   const pill=document.getElementById('streakPill');
-  if(str.count>=2){
-    pill.style.display='';
-    document.getElementById('streakCount').textContent=str.count+' din';
-  } else {
-    pill.style.display='none';
-  }
+  if(str.count>=2){pill.style.display='';document.getElementById('streakCount').textContent=str.count;}
+  else pill.style.display='none';
+}
+function updateStreak(){
+  const str=S.streak();
+  if(str.last===ds())return;
+  const yest=new Date();yest.setDate(yest.getDate()-1);
+  const y=yest.toISOString().split('T')[0];
+  str.count=(str.last===y)?str.count+1:1;
+  str.last=ds();
+  S.setStreak(str);checkStreak();
 }
 
-// ── SRS + LEVEL ───────────────────────────────────────────────
-function baseInterval(q){ return lvInterval(q.level||null); }
-
+// ── SRS ───────────────────────────────────────────────────────
+function currentInterval(q){
+  // interval = level step interval based on q.step
+  const lv = q.level||null;
+  const lvDef = lvInfo(lv);
+  if(lvDef.skip) return 9999; // zero level = skip
+  return lvStepInterval(lv, q.step||0);
+}
 function isDue(q){
   if(!q.lastDate) return false;
-  return daysSince(q.lastDate) >= Math.max(baseInterval(q), q.interval||1);
+  if(lvInfo(q.level||null).skip) return false; // zero level never due
+  return daysSince(q.lastDate) >= currentInterval(q);
 }
 function overdue(q){
-  if(!q.lastDate) return 0;
-  return daysSince(q.lastDate) - Math.max(baseInterval(q), q.interval||1);
+  if(!q.lastDate||!isDue(q)) return 0;
+  return daysSince(q.lastDate) - currentInterval(q);
 }
 function prio(q){
+  if(lvInfo(q.level||null).skip) return 'skip'; // zero level = skip
   if(!q.lastDate) return 'new';
   if((q.wrong||0)>0 && isDue(q)) return 'wrong';
   if(isDue(q)) return 'due';
   return 'done';
 }
-
-// ── RECOMMEND ─────────────────────────────────────────────────
 function recommend(stuId){
-  const qs=S.questions();
-  const settings=S.settings();
-  const mix=settings.mix||{};
-  const totalMix=Object.values(mix).reduce((a,b)=>a+(b||0),0);
-  const useMix = totalMix>0;
-
-  const buckets={lv0:[],lv1:[],lv2:[],lv3:[],lvE:[],null:[]};
+  const qs=S.questions(),settings=S.settings();
+  const mix=settings.mix||{},totalMix=Object.values(mix).reduce((a,b)=>a+(b||0),0);
+  const buckets={lv0:[],lv1:[],lv2:[],lv3:[],lvE:[],'null':[]};
   for(const[id,q]of Object.entries(qs)){
-    if(q.student!==stuId) continue;
+    if(q.student!==stuId)continue;
     const p=prio(q);
-    if(p==='done') continue;
+    if(p==='done'||p==='skip')continue; // zero level skipped
     const lv=q.level||'null';
-    if(!buckets[lv]) buckets[lv]=[];
+    if(!buckets[lv])buckets[lv]=[];
     buckets[lv].push({id,p,q});
   }
-
-  // Sort each bucket: wrong first, then due, then new; within same prio: most wrong / most overdue first
-  const sortBucket=arr=>arr.sort((a,b)=>{
+  const sort=arr=>arr.sort((a,b)=>{
     const po={wrong:0,due:1,new:2};
-    if(po[a.p]!==po[b.p]) return po[a.p]-po[b.p];
-    if(a.p==='wrong') return (b.q.wrong||0)-(a.q.wrong||0);
-    if(a.p==='due') return overdue(b.q)-overdue(a.q);
+    if(po[a.p]!==po[b.p])return po[a.p]-po[b.p];
+    if(a.p==='wrong')return(b.q.wrong||0)-(a.q.wrong||0);
+    if(a.p==='due')return overdue(b.q)-overdue(a.q);
     return 0;
   });
-  Object.values(buckets).forEach(sortBucket);
-
+  Object.values(buckets).forEach(sort);
   let result=[];
-  if(useMix){
-    for(const lv of Object.keys(mix)){
-      const cnt=mix[lv]||0;
-      if(!cnt) continue;
-      result.push(...buckets[lv].slice(0,cnt).map(x=>x.id));
-    }
-    // Fill remaining with unleveled or any
-    const remaining=settings.dailyCount-result.length;
-    if(remaining>0){
-      const used=new Set(result);
-      const extra=buckets['null'].filter(x=>!used.has(x.id)).slice(0,remaining);
-      result.push(...extra.map(x=>x.id));
-    }
+  if(totalMix>0){
+    for(const lv of Object.keys(mix)){const cnt=mix[lv]||0;if(!cnt)continue;result.push(...buckets[lv].slice(0,cnt).map(x=>x.id));}
+    const rem=settings.dailyCount-result.length;
+    if(rem>0){const used=new Set(result);result.push(...buckets['null'].filter(x=>!used.has(x.id)).slice(0,rem).map(x=>x.id));}
   } else {
-    // All together, priority sorted
-    const all=Object.values(buckets).flat();
-    sortBucket(all);
-    result=all.slice(0,settings.dailyCount).map(x=>x.id);
+    const all=Object.values(buckets).flat();sort(all);result=all.slice(0,settings.dailyCount).map(x=>x.id);
   }
   return result;
 }
 
-// ── TODAY ─────────────────────────────────────────────────────
-function renderToday(){
-  document.getElementById('headerDate').textContent=new Date().toLocaleDateString('hi-IN',{weekday:'short',day:'numeric',month:'short'});
-  renderStreak();
+// ── SAVE HISTORY ──────────────────────────────────────────────
+function saveHistory(stuId,results,list){
+  const qs=S.questions();
+  const hist=S.history();
+  if(!hist[ds()])hist[ds()]={};
+  const done=Object.values(results).filter(v=>v).length;
+  const correct=Object.values(results).filter(v=>v==='correct').length;
+  const wrong=Object.values(results).filter(v=>v==='wrong').length;
+  hist[ds()][stuId]={done,total:list.length,correct,wrong};
+  S.setHistory(hist);
+}
+
+// ── HOME ──────────────────────────────────────────────────────
+function renderHome(){
+  document.getElementById('greetingSub').textContent=greeting();
   const students=S.students();
+  const nameEl=document.getElementById('greetingName');
+  if(students.length){
+    const stu=students.find(s=>s.id===activeHomeStu)||students[0];
+    nameEl.innerHTML=`${stu.name} <span style="color:var(--text-muted);font-size:16px;">Cl. ${stu.cls}</span>`;
+  } else {
+    nameEl.innerHTML='Q<span>Bank</span>';
+  }
+  checkStreak();
   if(!students.length){
-    document.getElementById('todayEmpty').style.display='';
-    document.getElementById('todayMain').style.display='none';
+    document.getElementById('homeEmpty').style.display='';
+    document.getElementById('homeMain').style.display='none';
     return;
   }
-  document.getElementById('todayEmpty').style.display='none';
-  document.getElementById('todayMain').style.display='';
-  if(!activeTodayStu||!students.find(s=>s.id===activeTodayStu)) activeTodayStu=students[0].id;
-  document.getElementById('todayStuRow').innerHTML=students.map(s=>`
-    <div class="stu-chip ${s.id===activeTodayStu?'active':''}" onclick="selTodayStu('${s.id}')">${s.name} (${s.cls})</div>
+  document.getElementById('homeEmpty').style.display='none';
+  document.getElementById('homeMain').style.display='';
+  if(!activeHomeStu||!students.find(s=>s.id===activeHomeStu))activeHomeStu=students[0].id;
+  document.getElementById('homeStuRow').innerHTML=students.map(s=>`
+    <div class="stu-chip ${s.id===activeHomeStu?'active':''}" onclick="selHomeStu('${s.id}')">${s.name} (${s.cls})</div>
   `).join('');
-  renderTodayList();
+  renderHomeList();
 }
-function selTodayStu(id){ activeTodayStu=id; renderToday(); }
+function selHomeStu(id){activeHomeStu=id;renderHome();}
 
-function renderTodayList(){
+function renderHomeList(){
   const qs=S.questions();
   let td=S.today();
-  if(!td[activeTodayStu]){
-    td[activeTodayStu]={list:recommend(activeTodayStu),results:{}};
+  if(!td[activeHomeStu]){
+    td[activeHomeStu]={list:recommend(activeHomeStu),results:{}};
     S.setToday(td);
   }
-  const{list,results}=td[activeTodayStu];
+  const{list,results}=td[activeHomeStu];
   const done=Object.values(results).filter(v=>v).length;
   const total=list.length;
-  document.getElementById('doneCount').textContent=done;
-  document.getElementById('totalCount').textContent=total;
-  document.getElementById('progBar').style.width=total?(done/total*100)+'%':'0%';
+  document.getElementById('homeDone').textContent=done;
+  document.getElementById('homeTotal').textContent=total;
+  document.getElementById('homeProgBar').style.width=total?(done/total*100)+'%':'0%';
   const allDone=done===total&&total>0;
-  document.getElementById('doneBanner').style.display=allDone?'':'none';
-  if(allDone) updateStreak(true);
-
+  document.getElementById('homeDoneBanner').style.display=allDone?'':'none';
+  if(allDone){updateStreak();saveHistory(activeHomeStu,results,list);}
   // Unassigned alert
-  const stuQs=Object.values(qs).filter(q=>q.student===activeTodayStu);
-  const unassigned=stuQs.filter(q=>!q.level).length;
-  const alertEl=document.getElementById('unassignedAlert');
-  if(unassigned>0){
-    alertEl.style.display='';
-    alertEl.innerHTML=`<div class="alert-box alert-warn">⚠️ ${unassigned} questions ka level assign nahi hua — Stats mein check karo</div>`;
-  } else { alertEl.style.display='none'; }
+  const stuQs=Object.values(qs).filter(q=>q.student===activeHomeStu);
+  const ua=stuQs.filter(q=>!q.level).length;
+  const uaEl=document.getElementById('homeUnassigned');
+  if(ua>0){uaEl.style.display='';uaEl.innerHTML=`<div class="alert-box alert-warn">⚠️ ${ua} questions ka level assign nahi — level set karo neeche</div>`;}
+  else uaEl.style.display='none';
 
-  const container=document.getElementById('qList');
+  const container=document.getElementById('homeQList');
   container.innerHTML='';
   if(!list.length){
     container.innerHTML='<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">Aaj ke liye koi question due nahi 🎯</div>';
     return;
   }
-
   list.forEach(id=>{
-    const q=qs[id]; if(!q) return;
+    const q=qs[id];if(!q)return;
     const res=results[id]||null;
     const p=prio(q);
     const dotCls=p==='wrong'?'p-wrong':p==='due'?'p-due':'p-new';
-    const sub=p==='wrong'
-      ?`${q.wrong}x galat · ${q.chapter} · ${q.type}`
-      :p==='due'
-      ?`SRS +${overdue(q)}d · ${q.chapter} · ${q.type}`
+    const stepLabel = q.level && !lvInfo(q.level).skip ? ` · Step ${(q.step||0)+1}/4` : '';
+    const sub=p==='wrong'?`${q.wrong}x galat${stepLabel} · ${q.chapter} · ${q.type}`
+      :p==='due'?`SRS +${overdue(q)}d${stepLabel} · ${q.chapter} · ${q.type}`
       :`Naya · ${q.chapter} · ${q.type}`;
     const curLv=q.level||null;
-    const lvBtns=LEVELS.map(l=>`
-      <button class="lv-btn ${curLv===l.key?'active-'+l.key:''}" onclick="setLevel('${id}','${l.key}')">${l.short}</button>
-    `).join('');
+    const lvBtns=LEVELS.map(l=>`<button class="lv-btn ${curLv===l.key?'active-'+l.key:''}" onclick="setLevel('${id}','${l.key}')">${l.short}</button>`).join('');
     const el=document.createElement('div');
     el.className='q-item'+(res==='correct'?' correct':res==='wrong'?' wrong':'');
     el.id='qi-'+id;
@@ -587,9 +716,7 @@ function renderTodayList(){
       <div class="q-top">
         <div class="q-dot ${dotCls}"></div>
         <div class="q-info">
-          <div class="q-main">${q.type} Q${q.num}
-            <span class="lv-badge lv-badge-${curLv||'null'}" id="lvbadge-${id}">${lvInfo(curLv).short}</span>
-          </div>
+          <div class="q-main">${q.type} Q${q.num} <span class="lv-badge lv-badge-${curLv||'null'}" id="lvbadge-${id}">${lvInfo(curLv).short}</span></div>
           <div class="q-sub">${sub}</div>
         </div>
         <div class="q-actions">
@@ -602,49 +729,54 @@ function renderTodayList(){
   });
 }
 
-function setLevel(id, lvKey){
-  const qs=S.questions();
-  if(!qs[id]) return;
-  const prev=qs[id].level;
-  qs[id].level = (prev===lvKey) ? null : lvKey;
-  // Sync SRS interval to level baseline
-  qs[id].interval = lvInterval(qs[id].level);
+function setLevel(id,lvKey){
+  const qs=S.questions();if(!qs[id])return;
+  qs[id].level=(qs[id].level===lvKey)?null:lvKey;
+  qs[id].step=0; // reset step on level change
+  qs[id].interval=lvStepInterval(qs[id].level, 0);
   S.setQuestions(qs);
   const curLv=qs[id].level;
-  // Update badge
   const badge=document.getElementById('lvbadge-'+id);
-  if(badge){ badge.className='lv-badge lv-badge-'+(curLv||'null'); badge.textContent=lvInfo(curLv).short; }
-  // Update buttons
+  if(badge){badge.className='lv-badge lv-badge-'+(curLv||'null');badge.textContent=lvInfo(curLv).short;}
   const row=document.getElementById('lvrow-'+id);
-  if(row){ row.querySelectorAll('.lv-btn').forEach((btn,i)=>{ const l=LEVELS[i]; btn.className='lv-btn'+(curLv===l.key?' active-'+l.key:''); }); }
+  if(row)row.querySelectorAll('.lv-btn').forEach((btn,i)=>{const l=LEVELS[i];btn.className='lv-btn'+(curLv===l.key?' active-'+l.key:'');});
   showToast(curLv?`✅ ${lvInfo(curLv).label} set`:'Level hata diya');
 }
 
 function markQ(id,result){
-  const qs=S.questions();
-  const td=S.today();
-  const sd=td[activeTodayStu]; if(!sd||!qs[id]) return;
-  const prev=sd.results[id]||null;
-  const lv=qs[id].level||null;
-  const base=lvInterval(lv);
-
+  const qs=S.questions(),td=S.today(),sd=td[activeHomeStu];
+  if(!sd||!qs[id])return;
+  const prev=sd.results[id]||null,base=lvInterval(qs[id].level||null);
   function undo(q,r){
-    if(r==='correct'){ q.interval=Math.max(base,Math.floor((q.interval||base)/2)); q.correct=Math.max(0,(q.correct||1)-1); }
-    else{ q.interval=base; q.wrong=Math.max(0,(q.wrong||1)-1); }
+    if(r==='correct'){
+      q.step=Math.max(0,(q.step||0)-1);
+      q.correct=Math.max(0,(q.correct||1)-1);
+    } else {
+      q.step=0; // un-reset
+      q.wrong=Math.max(0,(q.wrong||1)-1);
+    }
+    q.interval=lvStepInterval(q.level||null, q.step||0);
   }
   function apply(q,r){
     q.lastDate=ds();
-    if(r==='correct'){ q.interval=Math.min(base*32,(q.interval||base)*2); q.correct=(q.correct||0)+1; }
-    else{ q.interval=base; q.wrong=(q.wrong||0)+1; }
+    if(r==='correct'){
+      q.step=Math.min(BASE_SEQ.length-1,(q.step||0)+1); // advance step
+      q.correct=(q.correct||0)+1;
+    } else {
+      q.step=0; // reset to step 0 of same level
+      q.wrong=(q.wrong||0)+1;
+    }
+    q.interval=lvStepInterval(q.level||null, q.step||0);
   }
-  if(prev===result){ sd.results[id]=null; undo(qs[id],result); }
-  else{ if(prev) undo(qs[id],prev); sd.results[id]=result; apply(qs[id],result); }
-  S.setQuestions(qs); S.setToday(td); renderTodayList();
+  if(prev===result){sd.results[id]=null;undo(qs[id],result);}
+  else{if(prev)undo(qs[id],prev);sd.results[id]=result;apply(qs[id],result);}
+  S.setQuestions(qs);S.setToday(td);
+  saveHistory(activeHomeStu,sd.results,sd.list);
+  renderHomeList();
 }
-
 function regenerate(){
-  if(!confirm('Aaj ki list naye se banega. Purana progress jayega. OK?')) return;
-  const td=S.today(); delete td[activeTodayStu]; S.setToday(td); renderTodayList();
+  if(!confirm('Aaj ki list naye se banega. Purana progress jayega. OK?'))return;
+  const td=S.today();delete td[activeHomeStu];S.setToday(td);renderHomeList();
 }
 
 // ── ADD ───────────────────────────────────────────────────────
@@ -661,12 +793,9 @@ function addStudent(){
   const students=S.students();
   const id='stu_'+name.toLowerCase().replace(/\s+/g,'_')+'_'+cls;
   if(students.find(s=>s.id===id)){showToast('Yeh student already hai');return;}
-  students.push({id,name,cls});
-  S.setStudents(students);
-  document.getElementById('addStuName').value='';
-  document.getElementById('addStuClass').value='';
-  showToast(`✅ ${name} add ho gaya!`);
-  renderAdd();
+  students.push({id,name,cls});S.setStudents(students);
+  document.getElementById('addStuName').value='';document.getElementById('addStuClass').value='';
+  showToast(`✅ ${name} add ho gaya!`);renderAdd();
 }
 function setRangeMode(mode){
   rangeMode=mode;
@@ -688,15 +817,13 @@ function addQuestions(){
     const from=parseInt(document.getElementById('addRangeFrom').value);
     const to=parseInt(document.getElementById('addRangeTo').value);
     if(isNaN(from)||isNaN(to)||from>to){showToast('Valid range do');return;}
-    for(let i=from;i<=to;i++) nums.push(String(i));
+    for(let i=from;i<=to;i++)nums.push(String(i));
   }
-  const qs=S.questions();
-  let added=0,skipped=0;
+  const qs=S.questions();let added=0,skipped=0;
   for(const num of nums){
     const id=`${stuId}__${chapter}__${type}__${num}`;
     if(qs[id]){skipped++;continue;}
-    qs[id]={student:stuId,chapter,type,num,interval:1,correct:0,wrong:0,lastDate:null,level:null};
-    added++;
+    qs[id]={student:stuId,chapter,type,num,interval:2,correct:0,wrong:0,lastDate:null,level:null,step:0};added++;
   }
   S.setQuestions(qs);
   showToast(`✅ ${added} add hue${skipped?`, ${skipped} already the`:''}`);
@@ -704,51 +831,133 @@ function addQuestions(){
   renderBrowse();
 }
 function renderBrowse(){
-  const qs=S.questions();
-  const all=Object.entries(qs);
+  const qs=S.questions(),all=Object.entries(qs);
   if(!all.length){document.getElementById('browseCard').style.display='none';return;}
   document.getElementById('browseCard').style.display='';
-  const students=S.students();
-  const stuMap=Object.fromEntries(students.map(s=>[s.id,s]));
+  const stuMap=Object.fromEntries(S.students().map(s=>[s.id,s]));
   const tree={};
   for(const[id,q]of all){
     const key=`${q.student}||${q.chapter}||${q.type}`;
-    if(!tree[key]) tree[key]={student:q.student,chapter:q.chapter,type:q.type,items:[]};
+    if(!tree[key])tree[key]={student:q.student,chapter:q.chapter,type:q.type,items:[]};
     tree[key].items.push({id,num:q.num,level:q.level||null});
   }
-  let html=''; let lastStu='';
+  let html='',lastStu='';
   for(const[,grp]of Object.entries(tree)){
     const stu=stuMap[grp.student]||{name:grp.student,cls:'?'};
     if(grp.student!==lastStu){
       html+=`<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;padding:10px 0 4px;">${stu.name} — Class ${stu.cls}</div>`;
       lastStu=grp.student;
     }
-    html+=`
-      <div class="acc-item">
-        <div class="acc-header" onclick="this.parentElement.classList.toggle('open')">
-          <span>${grp.chapter} · ${grp.type} <span class="badge badge-accent">${grp.items.length}</span></span>
-          <span class="acc-arrow">▶</span>
-        </div>
-        <div class="acc-body">
-          <div class="q-grid">${grp.items.map(i=>`<span class="q-chip">${i.num} <span class="lv-badge lv-badge-${i.level||'null'}" style="font-size:9px;">${lvInfo(i.level).short}</span></span>`).join('')}</div>
-          <div style="margin-top:8px;"><button class="btn-sm btn-sm-danger" onclick="deleteGroup('${grp.student}','${grp.chapter}','${grp.type}')">🗑️ Delete Group</button></div>
-        </div>
-      </div>`;
+    html+=`<div class="acc-item">
+      <div class="acc-header" onclick="this.parentElement.classList.toggle('open')">
+        <span>${grp.chapter} · ${grp.type} <span class="badge badge-accent">${grp.items.length}</span></span>
+        <span class="acc-arrow">▶</span>
+      </div>
+      <div class="acc-body">
+        <div class="q-grid">${grp.items.map(i=>`<span class="q-chip">${i.num} <span class="lv-badge lv-badge-${i.level||'null'}" style="font-size:9px;">${lvInfo(i.level).short}</span></span>`).join('')}</div>
+        <div style="margin-top:8px;"><button class="btn-sm btn-sm-danger" onclick="deleteGroup('${grp.student}','${grp.chapter}','${grp.type}')">🗑️ Delete</button></div>
+      </div>
+    </div>`;
   }
   document.getElementById('browseList').innerHTML=html;
 }
 function deleteGroup(stuId,chapter,type){
-  if(!confirm(`"${chapter} > ${type}" delete hoga. OK?`)) return;
+  if(!confirm(`"${chapter} > ${type}" delete hoga. OK?`))return;
   const qs=S.questions();
-  for(const id of Object.keys(qs)){ if(qs[id].student===stuId&&qs[id].chapter===chapter&&qs[id].type===type) delete qs[id]; }
-  S.setQuestions(qs); showToast('Delete ho gaya'); renderBrowse();
+  for(const id of Object.keys(qs)){if(qs[id].student===stuId&&qs[id].chapter===chapter&&qs[id].type===type)delete qs[id];}
+  S.setQuestions(qs);showToast('Delete ho gaya');renderBrowse();
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────
+function renderCalendar(){
+  const students=S.students();
+  if(!students.length){document.getElementById('calStuRow').innerHTML='';return;}
+  if(!activeCalStu||!students.find(s=>s.id===activeCalStu))activeCalStu=students[0].id;
+  document.getElementById('calStuRow').innerHTML=students.map(s=>`
+    <div class="stu-chip ${s.id===activeCalStu?'active':''}" onclick="selCalStu('${s.id}')">${s.name} (${s.cls})</div>
+  `).join('');
+  drawCalendar();
+}
+function selCalStu(id){activeCalStu=id;renderCalendar();}
+function calPrevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}drawCalendar();}
+function calNextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}drawCalendar();}
+
+function drawCalendar(){
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthLabel').textContent=`${MONTHS[calMonth]} ${calYear}`;
+
+  const hist=S.history();
+  const today=ds();
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+
+  const DAYS=['S','M','T','W','T','F','S'];
+  let html=DAYS.map(d=>`<div class="cal-day-hdr">${d}</div>`).join('');
+
+  // Empty cells before first day
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-day empty"></div>`;
+
+  let activeDays=0,totalDone=0;
+
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=dateStr===today;
+    const dayHist=hist[dateStr]?.[activeCalStu];
+    const isFuture=dateStr>today;
+
+    let cls='cal-day';
+    let dotHtml='';
+    let onclick='';
+
+    if(isToday) cls+=' today';
+
+    if(dayHist&&!isFuture){
+      const pct=dayHist.total>0?dayHist.done/dayHist.total:0;
+      if(pct>=1){cls+=' done';dotHtml=`<div class="cal-dot cal-dot-green"></div>`;activeDays++;totalDone+=dayHist.done;}
+      else if(pct>0){cls+=' partial';dotHtml=`<div class="cal-dot cal-dot-yellow"></div>`;activeDays++;totalDone+=dayHist.done;}
+      onclick=`onclick="showDayDetail('${dateStr}')"`;
+    } else if(!isFuture&&!isToday&&dateStr<today){
+      // Past day with no activity
+      cls+=' missed';
+    }
+
+    html+=`<div class="${cls}" ${onclick} style="${dayHist?'cursor:pointer':''}">${d}${dotHtml}</div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML=html;
+
+  // Monthly summary
+  const str=S.streak();
+  document.getElementById('mDays').textContent=activeDays;
+  document.getElementById('mQDone').textContent=totalDone;
+  document.getElementById('mStreak').textContent=str.count||0;
+
+  document.getElementById('calDayDetail').style.display='none';
+}
+
+function showDayDetail(dateStr){
+  const hist=S.history();
+  const dayData=hist[dateStr]?.[activeCalStu];
+  if(!dayData)return;
+  const d=new Date(dateStr);
+  const label=d.toLocaleDateString('hi-IN',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('calDayTitle').textContent=label;
+  const pct=dayData.total>0?Math.round(dayData.done/dayData.total*100):0;
+  document.getElementById('calDayBody').innerHTML=`
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-green">✓ ${dayData.done} / ${dayData.total} done (${pct}%)</span>
+      <span class="badge badge-blue">✅ ${dayData.correct||0} sahi</span>
+      <span class="badge" style="background:rgba(248,81,73,.12);color:var(--red)">✗ ${dayData.wrong||0} galat</span>
+    </div>`;
+  document.getElementById('calDayDetail').style.display='';
+  document.getElementById('calDayDetail').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 // ── STATS ─────────────────────────────────────────────────────
 function renderStats(){
   const students=S.students();
   if(!students.length){document.getElementById('statsStuRow').innerHTML='';return;}
-  if(!activeStatsStu||!students.find(s=>s.id===activeStatsStu)) activeStatsStu=students[0].id;
+  if(!activeStatsStu||!students.find(s=>s.id===activeStatsStu))activeStatsStu=students[0].id;
   document.getElementById('statsStuRow').innerHTML=students.map(s=>`
     <div class="stu-chip ${s.id===activeStatsStu?'active':''}" onclick="selStatsStu('${s.id}')">${s.name} (${s.cls})</div>
   `).join('');
@@ -756,43 +965,32 @@ function renderStats(){
   const all=Object.entries(qs).filter(([,q])=>q.student===activeStatsStu);
   const doneQs=all.filter(([,q])=>q.lastDate).length;
   const wrongQs=all.filter(([,q])=>(q.wrong||0)>0).length;
-  const unassignedCount=all.filter(([,q])=>!q.level).length;
+  const ua=all.filter(([,q])=>!q.level).length;
   document.getElementById('sTot').textContent=all.length;
   document.getElementById('sDone').textContent=doneQs;
   document.getElementById('sWrong').textContent=wrongQs;
-
-  // Unassigned alert
   const uaEl=document.getElementById('statsUnassigned');
-  if(unassignedCount>0){
-    uaEl.style.display='';
-    uaEl.innerHTML=`<div class="alert-box alert-warn">⚠️ ${unassignedCount} questions ka level assign nahi hua — Aaj tab mein assign karo</div>`;
-  } else { uaEl.style.display='none'; }
+  if(ua>0){uaEl.style.display='';uaEl.innerHTML=`<div class="alert-box alert-warn">⚠️ ${ua} questions ka level assign nahi</div>`;}
+  else uaEl.style.display='none';
 
-  // Level distribution bars
-  const lvCounts={null:0};
-  LEVELS.forEach(l=>lvCounts[l.key]=0);
-  for(const[,q]of all) lvCounts[q.level||null]=(lvCounts[q.level||null]||0)+1;
-  const maxCount=Math.max(...Object.values(lvCounts),1);
-  const lvRows=[{key:null,label:'Unset',color:'#6e7681'},...LEVELS];
-  document.getElementById('lvDistGrid').innerHTML=lvRows.map(l=>`
+  const lvCounts={null:0};LEVELS.forEach(l=>lvCounts[l.key]=0);
+  for(const[,q]of all)lvCounts[q.level||null]=(lvCounts[q.level||null]||0)+1;
+  const maxC=Math.max(...Object.values(lvCounts),1);
+  document.getElementById('lvDistGrid').innerHTML=[{key:null,label:'Unset',color:'#6e7681'},...LEVELS].map(l=>`
     <div class="lv-dist-row">
-      <div class="lv-dist-label" style="color:${l.color};font-size:11px;font-weight:700;">${l.label||'Unset'}</div>
-      <div class="lv-dist-bar-wrap"><div class="lv-dist-bar" style="width:${Math.round((lvCounts[l.key]||0)/maxCount*100)}%;background:${l.color}"></div></div>
+      <div class="lv-dist-label" style="color:${l.color}">${l.label||'Unset'}</div>
+      <div class="lv-dist-bar-wrap"><div class="lv-dist-bar" style="width:${Math.round((lvCounts[l.key]||0)/maxC*100)}%;background:${l.color}"></div></div>
       <div class="lv-dist-count" style="color:${l.color}">${lvCounts[l.key]||0}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 
-  // Filter chips
   document.getElementById('lvFilterRow').innerHTML=`
     <div class="lv-fc" style="${activeStatLv==='all'?'border-color:var(--accent);color:var(--accent);background:var(--accent-dim)':''}" onclick="setLvFilter('all')">Sab</div>
     <div class="lv-fc" style="${activeStatLv==='null'?'border-color:#6e7681;color:#6e7681;background:rgba(110,118,129,.15)':''}" onclick="setLvFilter('null')">Unset</div>
-    ${LEVELS.map(l=>`<div class="lv-fc" style="${activeStatLv===l.key?`border-color:${l.color};color:${l.color};background:rgba(0,0,0,.2)`:''}" onclick="setLvFilter('${l.key}')">${l.label}</div>`).join('')}
-  `;
+    ${LEVELS.map(l=>`<div class="lv-fc" style="${activeStatLv===l.key?`border-color:${l.color};color:${l.color};background:rgba(0,0,0,.2)`:''}" onclick="setLvFilter('${l.key}')">${l.label}</div>`).join('')}`;
   renderChapters();
 }
-function selStatsStu(id){ activeStatsStu=id; renderStats(); }
-function setLvFilter(lv){ activeStatLv=lv; renderChapters(); renderStats(); }
-
+function selStatsStu(id){activeStatsStu=id;renderStats();}
+function setLvFilter(lv){activeStatLv=lv;renderStats();}
 function renderChapters(){
   const qs=S.questions();
   const all=Object.entries(qs).filter(([,q])=>q.student===activeStatsStu);
@@ -800,9 +998,9 @@ function renderChapters(){
   const filtered=activeStatLv==='all'?all:all.filter(([,q])=>(q.level||null)===(activeStatLv==='null'?null:activeStatLv));
   const chapters={};
   for(const[id,q]of filtered){
-    if(search&&!q.chapter.toLowerCase().includes(search)) continue;
+    if(search&&!q.chapter.toLowerCase().includes(search))continue;
     const key=`${q.chapter}||${q.type}`;
-    if(!chapters[key]) chapters[key]={chapter:q.chapter,type:q.type,items:[]};
+    if(!chapters[key])chapters[key]={chapter:q.chapter,type:q.type,items:[]};
     chapters[key].items.push([id,q]);
   }
   let html='';
@@ -811,28 +1009,23 @@ function renderChapters(){
     const doneC=grp.items.filter(([,q])=>q.lastDate).length;
     const wrongC=grp.items.filter(([,q])=>(q.wrong||0)>0).length;
     const pct=tot?Math.round(doneC/tot*100):0;
-    html+=`
-      <div class="acc-item">
-        <div class="acc-header" onclick="this.parentElement.classList.toggle('open')">
-          <span style="flex:1;min-width:0;">${grp.chapter} · ${grp.type} <span class="badge badge-accent">${tot}</span></span>
-          <span style="font-size:12px;font-weight:700;color:var(--green);flex-shrink:0;">${pct}%</span>
-          <span class="acc-arrow">▶</span>
+    html+=`<div class="acc-item">
+      <div class="acc-header" onclick="this.parentElement.classList.toggle('open')">
+        <span style="flex:1;min-width:0;">${grp.chapter} · ${grp.type} <span class="badge badge-accent">${tot}</span></span>
+        <span style="font-size:12px;font-weight:700;color:var(--green);flex-shrink:0;">${pct}%</span>
+        <span class="acc-arrow">▶</span>
+      </div>
+      <div class="acc-body">
+        <div class="ch-prog-wrap"><div class="ch-prog-bar" style="width:${pct}%"></div></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+          <span class="badge badge-green">✓ ${doneC} done</span>
+          ${wrongC?`<span class="badge" style="background:rgba(248,81,73,.12);color:var(--red)">✗ ${wrongC} galat</span>`:''}
         </div>
-        <div class="acc-body">
-          <div class="ch-prog-wrap"><div class="ch-prog-bar" style="width:${pct}%"></div></div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-            <span class="badge badge-green">✓ ${doneC} done</span>
-            ${wrongC?`<span class="badge" style="background:rgba(248,81,73,.12);color:var(--red)">✗ ${wrongC} galat</span>`:''}
-          </div>
-          <div class="q-grid">
-            ${grp.items.map(([,q])=>`
-              <span class="q-chip">Q${q.num}
-                <span class="lv-badge lv-badge-${q.level||'null'}" style="font-size:9px;">${lvInfo(q.level||null).short}</span>
-                ${(q.wrong||0)>0?`<span style="color:var(--red);font-size:10px;">(${q.wrong}✗)</span>`:''}
-              </span>`).join('')}
-          </div>
+        <div class="q-grid">
+          ${grp.items.map(([,q])=>`<span class="q-chip">Q${q.num} <span class="lv-badge lv-badge-${q.level||'null'}" style="font-size:9px;">${lvInfo(q.level||null).short}</span>${(q.wrong||0)>0?`<span style="color:var(--red);font-size:10px;">(${q.wrong}✗)</span>`:''}</span>`).join('')}
         </div>
-      </div>`;
+      </div>
+    </div>`;
   }
   document.getElementById('chapterAcc').innerHTML=html||'<div style="padding:10px 0;font-size:13px;color:var(--text-muted)">Koi data nahi</div>';
 }
@@ -841,230 +1034,159 @@ function renderChapters(){
 function renderSettings(){
   const s=S.settings();
   document.getElementById('setCount').value=s.dailyCount;
-  // GitHub config
-  const gc=GH.config()||{};
-  if(document.getElementById('ghToken')) document.getElementById('ghToken').value=gc.token||'';
-  if(document.getElementById('ghOwner')) document.getElementById('ghOwner').value=gc.owner||'rohanapatel121212-debug';
-  if(document.getElementById('ghRepo'))  document.getElementById('ghRepo').value=gc.repo||'qbank';
-  if(document.getElementById('ghBranch'))document.getElementById('ghBranch').value=gc.branch||'main';
-  if(document.getElementById('ghFile'))  document.getElementById('ghFile').value=gc.file||'qbank-data.json';
-  if(gc.token) ghSetStatus('Config ready ✅');
   const mix=s.mix||{};
   document.getElementById('mixGrid').innerHTML=LEVELS.map(l=>`
     <div class="mix-item">
       <div class="mix-label" style="color:${l.color}">${l.label}</div>
-      <input class="mix-input" type="number" id="mix-${l.key}" value="${mix[l.key]||0}" min="0" placeholder="0" />
-    </div>
-  `).join('');
+      <input class="mix-input" type="number" id="mix-${l.key}" value="${mix[l.key]||0}" min="0" />
+    </div>`).join('');
   const students=S.students();
   document.getElementById('stuList').innerHTML=students.length
-    ?students.map(s=>`
-        <div class="stu-item">
-          <div><div class="stu-name">${s.name}</div><div class="stu-meta">Class ${s.cls}</div></div>
-          <button class="btn-sm btn-sm-danger" onclick="deleteStu('${s.id}')">Delete</button>
-        </div>`).join('')
+    ?students.map(s=>`<div class="stu-item">
+        <div><div class="stu-name">${s.name}</div><div class="stu-meta">Class ${s.cls}</div></div>
+        <button class="btn-sm btn-sm-danger" onclick="deleteStu('${s.id}')">Delete</button>
+      </div>`).join('')
     :'<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">Koi student nahi</div>';
+  const gc=GH.config()||{};
+  ['ghToken','ghOwner','ghRepo','ghBranch','ghFile'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  if(document.getElementById('ghToken'))document.getElementById('ghToken').value=gc.token||'';
+  if(document.getElementById('ghOwner'))document.getElementById('ghOwner').value=gc.owner||'rohanapatel121212-debug';
+  if(document.getElementById('ghRepo'))document.getElementById('ghRepo').value=gc.repo||'qbank';
+  if(document.getElementById('ghBranch'))document.getElementById('ghBranch').value=gc.branch||'main';
+  if(document.getElementById('ghFile'))document.getElementById('ghFile').value=gc.file||'qbank-data.json';
+  if(gc.token)ghSetStatus('Config ready ✅');
 }
 function saveSettings(){
-  const mix={};
-  LEVELS.forEach(l=>{ mix[l.key]=parseInt(document.getElementById('mix-'+l.key).value)||0; });
-  S.setSettings({dailyCount:parseInt(document.getElementById('setCount').value)||20, mix});
+  const mix={};LEVELS.forEach(l=>{mix[l.key]=parseInt(document.getElementById('mix-'+l.key).value)||0;});
+  S.setSettings({dailyCount:parseInt(document.getElementById('setCount').value)||20,mix});
   showToast('✅ Save ho gaya!');
 }
 function deleteStu(id){
-  if(!confirm('Student aur saare questions delete honge. Sure?')) return;
+  if(!confirm('Student aur saare questions delete honge. Sure?'))return;
   S.setStudents(S.students().filter(s=>s.id!==id));
-  const qs=S.questions();
-  for(const qid of Object.keys(qs)){ if(qs[qid].student===id) delete qs[qid]; }
-  S.setQuestions(qs); showToast('Delete ho gaya'); renderSettings();
+  const qs=S.questions();for(const qid of Object.keys(qs)){if(qs[qid].student===id)delete qs[qid];}
+  S.setQuestions(qs);showToast('Delete ho gaya');renderSettings();
 }
 function resetProgress(){
-  if(!confirm('Saara progress reset hoga. Questions + levels rahenge. OK?')) return;
+  if(!confirm('Saara progress reset hoga. Questions + Levels rahenge. OK?'))return;
   const qs=S.questions();
   for(const id of Object.keys(qs)){
-    const base=lvInterval(qs[id].level||null);
-    Object.assign(qs[id],{interval:base,correct:0,wrong:0,lastDate:null});
+    const b=lvStepInterval(qs[id].level||null,0);
+    Object.assign(qs[id],{interval:b,correct:0,wrong:0,lastDate:null,step:0});
   }
-  S.setQuestions(qs); localStorage.removeItem('qb_today'); showToast('Progress reset ho gaya');
+  S.setQuestions(qs);localStorage.removeItem('qb_today');showToast('Progress reset ho gaya');
 }
 function resetAll(){
-  if(!confirm('SABKUCH DELETE — students, questions, progress. Bilkul sure?')) return;
-  ['qb_s','qb_q','qb_cfg','qb_today','qb_streak'].forEach(k=>localStorage.removeItem(k));
-  activeTodayStu=null; activeStatsStu=null;
-  showToast('Sab reset ho gaya'); renderSettings(); renderToday();
+  if(!confirm('SABKUCH DELETE — students, questions, progress. Bilkul sure?'))return;
+  ['qb_s','qb_q','qb_cfg','qb_today','qb_streak','qb_hist'].forEach(k=>localStorage.removeItem(k));
+  activeHomeStu=null;activeStatsStu=null;activeCalStu=null;
+  showToast('Sab reset ho gaya');renderSettings();renderHome();
 }
 
-// ── GITHUB SYNC ──────────────────────────────────────────────
-const GH = {
-  config() { try{return JSON.parse(localStorage.getItem('qb_gh')||'null');}catch{return null;} },
-  setConfig(v){ localStorage.setItem('qb_gh',JSON.stringify(v)); },
-};
-
-function ghHeaders(){
-  const c=GH.config();
-  if(!c||!c.token) return null;
-  return { 'Authorization':'token '+c.token, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' };
-}
-
-function ghApiUrl(){
-  const c=GH.config();
-  if(!c) return null;
-  return `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${c.file}`;
-}
-
-function ghSetStatus(msg, color='var(--text-muted)'){
-  const el=document.getElementById('ghStatus');
-  if(el){ el.textContent=msg; el.style.color=color; }
-}
+// ── GITHUB SYNC ───────────────────────────────────────────────
+function ghSetStatus(msg,color='var(--text-muted)'){const el=document.getElementById('ghStatus');if(el){el.textContent=msg;el.style.color=color;}}
+function ghHeaders(){const c=GH.config();if(!c||!c.token)return null;return{'Authorization':'token '+c.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'};}
+function ghApiUrl(){const c=GH.config();if(!c)return null;return`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${c.file}`;}
 
 async function ghPush(){
-  const c=GH.config();
-  if(!c||!c.token||!c.owner||!c.repo||!c.file){ ghSetStatus('❌ Pehle config save karo','var(--red)'); return; }
-  const btn=document.getElementById('ghPushBtn');
-  if(btn){ btn.disabled=true; btn.textContent='⏳ Saving...'; }
-  ghSetStatus('GitHub pe save ho raha hai...');
+  const c=GH.config();if(!c||!c.token){ghSetStatus('❌ Pehle config save karo','var(--red)');return;}
+  const btn=document.getElementById('ghPushBtn');if(btn){btn.disabled=true;btn.textContent='⏳ Saving...';}
+  ghSetStatus('Save ho raha hai...');
   try{
-    const headers=ghHeaders();
-    const url=ghApiUrl();
-    // Get current SHA (needed for update)
+    const headers=ghHeaders(),url=ghApiUrl();
     let sha=null;
-    try{
-      const r=await fetch(url+'?ref='+(c.branch||'main'),{headers});
-      if(r.ok){ const d=await r.json(); sha=d.sha; }
-    }catch{}
-    // Build payload
-    const data={
-      students:S.students(),
-      questions:S.questions(),
-      settings:S.settings(),
-      streak:S.streak(),
-      synced:new Date().toISOString(),
-      version:2
-    };
-    const body={ message:'QBank sync '+ds(), content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2)))), branch:c.branch||'main' };
-    if(sha) body.sha=sha;
+    try{const r=await fetch(url+'?ref='+(c.branch||'main'),{headers});if(r.ok){const d=await r.json();sha=d.sha;}}catch{}
+    const data={students:S.students(),questions:S.questions(),settings:S.settings(),streak:S.streak(),history:S.history(),synced:new Date().toISOString(),version:2};
+    const body={message:'QBank sync '+ds(),content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2)))),branch:c.branch||'main'};
+    if(sha)body.sha=sha;
     const res=await fetch(url,{method:'PUT',headers,body:JSON.stringify(body)});
-    if(!res.ok){ const e=await res.json(); throw new Error(e.message||res.status); }
-    ghSetStatus('✅ GitHub pe save ho gaya! '+new Date().toLocaleTimeString('hi-IN'),'var(--green)');
+    if(!res.ok){const e=await res.json();throw new Error(e.message||res.status);}
+    ghSetStatus('✅ Saved! '+new Date().toLocaleTimeString('hi-IN'),'var(--green)');
     showToast('☁️ GitHub sync complete!');
-  }catch(err){
-    ghSetStatus('❌ Error: '+err.message,'var(--red)');
-    showToast('Sync failed: '+err.message);
-  } finally {
-    if(btn){ btn.disabled=false; btn.textContent='☁️ GitHub Pe Save'; }
-  }
+  }catch(err){ghSetStatus('❌ Error: '+err.message,'var(--red)');showToast('Sync failed');}
+  finally{if(btn){btn.disabled=false;btn.textContent='☁️ GitHub Pe Save';}}
 }
-
 async function ghPull(){
-  const c=GH.config();
-  if(!c||!c.token||!c.owner||!c.repo||!c.file){ ghSetStatus('❌ Pehle config save karo','var(--red)'); return; }
-  const btn=document.getElementById('ghPullBtn');
-  if(btn){ btn.disabled=true; btn.textContent='⏳ Loading...'; }
-  ghSetStatus('GitHub se load ho raha hai...');
+  const c=GH.config();if(!c||!c.token){ghSetStatus('❌ Pehle config save karo','var(--red)');return;}
+  const btn=document.getElementById('ghPullBtn');if(btn){btn.disabled=true;btn.textContent='⏳ Loading...';}
+  ghSetStatus('Load ho raha hai...');
   try{
-    const headers=ghHeaders();
-    const url=ghApiUrl();
+    const headers=ghHeaders(),url=ghApiUrl();
     const res=await fetch(url+'?ref='+(c.branch||'main'),{headers});
-    if(!res.ok){ const e=await res.json(); throw new Error(e.message||'File nahi mili'); }
+    if(!res.ok){const e=await res.json();throw new Error(e.message||'File nahi mili');}
     const d=await res.json();
-    const content=JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/
-/g,'')))));
-    if(!content.students||!content.questions) throw new Error('Invalid data format');
-    if(!confirm(`GitHub se load karoge? Isme ${Object.keys(content.questions).length} questions hain.
-Local data replace ho jayega.`)) return;
-    S.setStudents(content.students);
-    S.setQuestions(content.questions);
-    if(content.settings) S.setSettings(content.settings);
-    if(content.streak) S.setStreak(content.streak);
+    const content=JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
+    if(!content.students||!content.questions)throw new Error('Invalid format');
+    if(!confirm(`GitHub se load karoge? ${Object.keys(content.questions).length} questions hain. Local data replace hoga.`))return;
+    S.setStudents(content.students);S.setQuestions(content.questions);
+    if(content.settings)S.setSettings(content.settings);
+    if(content.streak)S.setStreak(content.streak);
+    if(content.history)localStorage.setItem('qb_hist',JSON.stringify(content.history));
     localStorage.removeItem('qb_today');
     ghSetStatus('✅ Load ho gaya! '+new Date().toLocaleTimeString('hi-IN'),'var(--green)');
-    showToast('⬇️ GitHub se data load ho gaya!');
-    renderToday();
-  }catch(err){
-    ghSetStatus('❌ Error: '+err.message,'var(--red)');
-    showToast('Load failed: '+err.message);
-  } finally {
-    if(btn){ btn.disabled=false; btn.textContent='⬇️ GitHub Se Load'; }
-  }
+    showToast('⬇️ Data load ho gaya!');renderHome();
+  }catch(err){ghSetStatus('❌ Error: '+err.message,'var(--red)');showToast('Load failed');}
+  finally{if(btn){btn.disabled=false;btn.textContent='⬇️ GitHub Se Load';}}
 }
-
 function saveGhConfig(){
   const c={
-    token: document.getElementById('ghToken').value.trim(),
-    owner: document.getElementById('ghOwner').value.trim()||'rohanapatel121212-debug',
-    repo:  document.getElementById('ghRepo').value.trim()||'qbank',
+    token:document.getElementById('ghToken').value.trim(),
+    owner:document.getElementById('ghOwner').value.trim()||'rohanapatel121212-debug',
+    repo:document.getElementById('ghRepo').value.trim()||'qbank',
     branch:document.getElementById('ghBranch').value.trim()||'main',
-    file:  document.getElementById('ghFile').value.trim()||'qbank-data.json',
+    file:document.getElementById('ghFile').value.trim()||'qbank-data.json',
   };
-  if(!c.token){ showToast('Token daalo pehle'); return; }
+  if(!c.token){showToast('Token daalo pehle');return;}
   GH.setConfig(c);
-  showToast('✅ GitHub config save ho gaya!');
-  ghSetStatus('Config ready — "GitHub Pe Save" dabao');
+  const dot=document.getElementById('syncDot');if(dot)dot.style.display='';
+  showToast('✅ GitHub config save ho gaya!');ghSetStatus('Config ready ✅');
 }
 
 // ── BACKUP ────────────────────────────────────────────────────
 function exportData(){
-  const data={
-    students:S.students(),
-    questions:S.questions(),
-    settings:S.settings(),
-    streak:S.streak(),
-    exported:new Date().toISOString(),
-    version:2
-  };
+  const data={students:S.students(),questions:S.questions(),settings:S.settings(),streak:S.streak(),history:S.history(),exported:new Date().toISOString(),version:2};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=`qbank-backup-${ds()}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✅ Export ho gaya!');
+  const a=document.createElement('a');a.href=url;a.download=`qbank-backup-${ds()}.json`;a.click();
+  URL.revokeObjectURL(url);showToast('✅ Export ho gaya!');
 }
 function importData(event){
-  const file=event.target.files[0]; if(!file) return;
+  const file=event.target.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
     try{
       const data=JSON.parse(e.target.result);
-      if(!data.students||!data.questions) throw new Error('Invalid format');
-      if(!confirm(`Import karoge? Isme ${Object.keys(data.questions).length} questions hain. Purana data replace ho jayega.`)) return;
-      S.setStudents(data.students);
-      S.setQuestions(data.questions);
-      if(data.settings) S.setSettings(data.settings);
-      if(data.streak) S.setStreak(data.streak);
+      if(!data.students||!data.questions)throw new Error('Invalid format');
+      if(!confirm(`Import karoge? ${Object.keys(data.questions).length} questions hain. Purana data replace hoga.`))return;
+      S.setStudents(data.students);S.setQuestions(data.questions);
+      if(data.settings)S.setSettings(data.settings);
+      if(data.streak)S.setStreak(data.streak);
+      if(data.history)localStorage.setItem('qb_hist',JSON.stringify(data.history));
       localStorage.removeItem('qb_today');
-      showToast('✅ Import ho gaya!');
-      renderToday();
-    }catch(err){
-      showToast('❌ Invalid file: '+err.message);
-    }
+      showToast('✅ Import ho gaya!');renderHome();
+    }catch(err){showToast('❌ Invalid file: '+err.message);}
   };
-  reader.readAsText(file);
-  event.target.value='';
+  reader.readAsText(file);event.target.value='';
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
 let toastT;
 function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2800);
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);
 }
 
 // ── SERVICE WORKER ────────────────────────────────────────────
 if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-  });
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 }
 
 // ── INIT ──────────────────────────────────────────────────────
-// Show sync dot if GH configured
-if(GH.config()?.token){ const d=document.getElementById('syncDot'); if(d) d.style.display=''; }
-document.getElementById('headerDate').textContent=new Date().toLocaleDateString('hi-IN',{weekday:'short',day:'numeric',month:'short'});
-renderStreak();
-renderToday();
+if(GH.config()?.token){const d=document.getElementById('syncDot');if(d)d.style.display='';}
+checkStreak();
+renderHome();
 </script>
 </body>
 </html>
