@@ -1,1182 +1,926 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>QBank - Question Bank</title>
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="QBank">
-<meta name="theme-color" content="#0a0c10">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QBank Planner</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#f0a500" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="QBank" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #21262d; --border: #30363d;
+      --accent: #f0a500; --accent-dim: rgba(240,165,0,0.12);
+      --green: #3fb950; --red: #f85149; --blue: #58a6ff; --purple: #bc8cff;
+      --text: #e6edf3; --text-muted: #8b949e; --radius: 12px;
+      --lv0:#6e7681; --lv1:#58a6ff; --lv2:#f0a500; --lv3:#3fb950; --lvE:#bc8cff;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
+    header{padding:18px 20px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+    .logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;flex-shrink:0;}
+    .logo span{color:var(--accent);}
+    .header-right{display:flex;align-items:center;gap:8px;}
+    .date-pill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text-muted);}
+    .streak-pill{background:rgba(240,165,0,.12);border:1px solid var(--accent);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--accent);}
 
-<!-- External Libraries (lazy load) -->
-<script>
-let _jszipLoaded = false, _html2canvasLoaded = false, _jspdfLoaded = false;
-function loadJSZip() {
-  return new Promise((res, rej) => {
-    if (typeof JSZip !== 'undefined') return res();
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-    s.onload = () => res();
-    s.onerror = rej;
-    document.head.appendChild(s);
-  });
-}
-function loadHtml2Canvas() {
-  return new Promise((res, rej) => {
-    if (typeof html2canvas !== 'undefined') return res();
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    s.onload = () => res();
-    s.onerror = rej;
-    document.head.appendChild(s);
-  });
-}
-function loadJsPDF() {
-  return new Promise((res, rej) => {
-    if (typeof jspdf !== 'undefined') return res();
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    s.onload = () => res();
-    s.onerror = rej;
-    document.head.appendChild(s);
-  });
-}
-</script>
+    /* TABS */
+    .tab-bar{display:flex;margin:14px 20px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;gap:3px;}
+    .tab-btn{flex:1;padding:8px 2px;border:none;background:none;color:var(--text-muted);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:500;border-radius:9px;cursor:pointer;transition:all .2s;}
+    .tab-btn.active{background:var(--accent);color:#000;font-weight:700;}
+    .content{flex:1;padding:14px 20px 24px;overflow-y:auto;}
+    .tab-panel{display:none;} .tab-panel.active{display:block;}
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+    /* CARDS */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;}
+    .card-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#0a0c10;--s1:#111318;--s2:#181b23;--s3:#1e222c;--s4:#252a36;
-  --border:#252a36;--border2:#2e3444;
-  --green:#22c55e;--gdim:rgba(34,197,94,0.09);
-  --amber:#f59e0b;--adim:rgba(245,158,11,0.09);
-  --red:#ef4444;--rdim:rgba(239,68,68,0.09);
-  --blue:#3b82f6;--bdim:rgba(59,130,246,0.09);
-  --cyan:#06b6d4;--cdim:rgba(6,182,212,0.09);
-  --text:#e8eaf0;--t2:#5a6070;--t3:#2e3340;
-  --mono:'JetBrains Mono',monospace;
-  --sans:'Plus Jakarta Sans',sans-serif;
-}
-html,body{height:100%;overflow:hidden}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);max-width:520px;margin:0 auto;display:flex;flex-direction:column;
-  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
-html{overscroll-behavior:none}
+    /* PROGRESS */
+    .prog-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+    .prog-label{font-size:13px;color:var(--text-muted);}
+    .prog-count{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--accent);}
+    .prog-total{font-size:13px;color:var(--text-muted);}
+    .prog-bar-wrap{background:var(--surface2);border-radius:99px;height:5px;overflow:hidden;}
+    .prog-bar{height:100%;background:var(--accent);border-radius:99px;transition:width .4s;}
 
-/* ── TOPBAR ── */
-.topbar{flex-shrink:0;background:rgba(10,12,16,0.98);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;z-index:50}
-.logo{font-family:var(--mono);font-size:.9rem;font-weight:700;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
-.logo em{color:var(--green);font-style:normal}
-.logo-badge{font-size:.55rem;background:var(--gdim);border:1px solid rgba(34,197,94,.25);color:var(--green);padding:2px 6px;border-radius:4px;font-weight:700;letter-spacing:.06em}
-.tbbtns{display:flex;gap:5px}
-.icon-btn{height:30px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--t2);font-size:.68rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0 9px;font-family:var(--sans);transition:all .15s;white-space:nowrap}
-.icon-btn:active{transform:scale(.92)}
-.icon-btn.g{background:var(--gdim);border-color:rgba(34,197,94,.2);color:var(--green)}
-.icon-btn.b{background:var(--bdim);border-color:rgba(59,130,246,.2);color:var(--blue)}
-.icon-btn.c{background:var(--cdim);border-color:rgba(6,182,212,.2);color:var(--cyan)}
-.icon-btn.a{background:var(--adim);border-color:rgba(245,158,11,.2);color:var(--amber)}
+    /* STUDENT CHIPS */
+    .stu-row{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+    .stu-chip{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;}
+    .stu-chip.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
 
-/* ── MAIN + PAGES ── */
-.main{flex:1;overflow:hidden;position:relative}
-.page{display:none;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.page.active{display:block}
-.pi{padding:12px}
+    /* Q LIST */
+    .q-list{display:flex;flex-direction:column;gap:8px;}
+    .q-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;transition:border-color .15s;}
+    .q-item.correct{border-color:var(--green);background:rgba(63,185,80,.07);}
+    .q-item.wrong{border-color:var(--red);background:rgba(248,81,73,.07);}
+    .q-top{display:flex;align-items:center;gap:10px;}
+    .q-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    .p-wrong{background:var(--red);} .p-due{background:var(--accent);} .p-new{background:var(--blue);}
+    .q-info{flex:1;min-width:0;}
+    .q-main{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+    .q-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
+    .q-actions{display:flex;gap:6px;flex-shrink:0;}
+    .btn-mark{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+    .btn-mark:hover{transform:scale(1.1);}
+    .btn-correct{color:var(--green);}  .btn-correct.active{background:rgba(63,185,80,.2);border-color:var(--green);}
+    .btn-wrong{color:var(--red);}      .btn-wrong.active{background:rgba(248,81,73,.2);border-color:var(--red);}
 
-/* ── BOTTOM NAV ── */
-.bnav{flex-shrink:0;background:rgba(10,12,16,0.98);border-top:1px solid var(--border);display:flex;padding:6px 0 max(16px, env(safe-area-inset-bottom));z-index:50}
-.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0;color:var(--t3);transition:all .15s;position:relative}
-.ni.active{color:var(--green)}
-.ni:active{transform:scale(.87)}
-.ni-icon{font-size:1.05rem;line-height:1}
-.ni-lbl{font-size:.5rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
-.ni-badge{position:absolute;top:1px;right:calc(50% - 14px);width:6px;height:6px;border-radius:50%;background:var(--cyan);display:none}
-.ni-badge.show{display:block}
+    /* LEVEL BUTTONS — bigger for mobile */
+    .q-level-row{display:flex;gap:5px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+    .lv-btn{flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;color:var(--text-muted);text-align:center;transition:all .15s;white-space:nowrap;}
+    .lv-btn:hover{border-color:var(--text-muted);color:var(--text);}
+    .lv-btn.active-lv0{background:rgba(110,118,129,.2);border-color:var(--lv0);color:var(--lv0);}
+    .lv-btn.active-lv1{background:rgba(88,166,255,.15);border-color:var(--lv1);color:var(--lv1);}
+    .lv-btn.active-lv2{background:rgba(240,165,0,.15);border-color:var(--lv2);color:var(--lv2);}
+    .lv-btn.active-lv3{background:rgba(63,185,80,.15);border-color:var(--lv3);color:var(--lv3);}
+    .lv-btn.active-lvE{background:rgba(188,140,255,.15);border-color:var(--lvE);color:var(--lvE);}
 
-/* ── COMMON ── */
-.sl{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);margin:14px 0 8px;display:flex;align-items:center;gap:6px}
-.sl::after{content:'';flex:1;height:1px;background:var(--border)}
-.card{background:var(--s1);border:1px solid var(--border);border-radius:13px;padding:13px;margin-bottom:8px}
-.empty{text-align:center;padding:28px 16px;color:var(--t2)}
-.empty-icon{font-size:1.8rem;margin-bottom:8px;opacity:.25}
-.empty-text{font-size:.75rem;line-height:1.7}
-.inp{background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:.88rem;outline:none;width:100%;font-family:var(--sans);transition:border-color .15s}
-.inp:focus{border-color:var(--green)}
-.inp::placeholder{color:var(--t3)}
-.big-btn{width:100%;padding:13px;border-radius:12px;border:none;font-size:.88rem;font-weight:800;cursor:pointer;font-family:var(--sans);transition:all .15s;margin-bottom:7px;letter-spacing:-.01em}
-.big-btn:active{transform:scale(.97)}
-.btn-g{background:var(--green);color:#000}
-.btn-c{background:var(--cyan);color:#000}
-.btn-o{background:transparent;border:1px solid var(--border2);color:var(--t2)}
+    /* LEVEL BADGE */
+    .lv-badge{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;border:1px solid;}
+    .lv-badge-null{background:var(--surface2);border-color:var(--border);color:var(--text-muted);}
+    .lv-badge-lv0{background:rgba(110,118,129,.15);border-color:var(--lv0);color:var(--lv0);}
+    .lv-badge-lv1{background:rgba(88,166,255,.12);border-color:var(--lv1);color:var(--lv1);}
+    .lv-badge-lv2{background:rgba(240,165,0,.12);border-color:var(--lv2);color:var(--lv2);}
+    .lv-badge-lv3{background:rgba(63,185,80,.12);border-color:var(--lv3);color:var(--lv3);}
+    .lv-badge-lvE{background:rgba(188,140,255,.12);border-color:var(--lvE);color:var(--lvE);}
 
-/* ══════════════ HOME PAGE ══════════════ */
-.hero{background:linear-gradient(135deg,var(--s2),var(--s3));border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
-.hero::after{content:'';position:absolute;top:-20px;right:-20px;width:90px;height:90px;background:radial-gradient(circle,rgba(34,197,94,.1),transparent 70%)}
-.hero-tag{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--green);margin-bottom:4px}
-.hero-title{font-size:1rem;font-weight:800;margin-bottom:3px}
-.hero-sub{font-size:.7rem;color:var(--t2);line-height:1.55}
-.hero-stats{display:flex;gap:12px;margin-top:10px}
-.hstat{text-align:center;flex:1}
-.hstat-val{font-family:var(--mono);font-size:.95rem;font-weight:700;color:var(--green)}
-.hstat-lbl{font-size:.53rem;color:var(--t2);text-transform:uppercase;letter-spacing:.06em}
+    /* EMPTY */
+    .empty-state{text-align:center;padding:40px 16px;color:var(--text-muted);}
+    .empty-icon{font-size:38px;margin-bottom:10px;}
+    .empty-title{font-family:'Syne',sans-serif;font-size:17px;color:var(--text);margin-bottom:6px;}
+    .empty-sub{font-size:12px;line-height:1.7;}
 
-/* Chapter cards */
-.ch-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden;animation:fadeUp .25s ease both}
-@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-.ch-card-hdr{padding:11px 13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:8px}
-.ch-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
-.ch-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;background:var(--s3)}
-.ch-info{flex:1;min-width:0}
-.ch-name{font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ch-meta{font-size:.62rem;color:var(--t2);font-family:var(--mono);margin-top:2px}
-.ch-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
-.ch-pct{font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--green)}
-.mini-bar{width:48px;height:4px;background:var(--border2);border-radius:99px;overflow:hidden}
-.mini-fill{height:100%;border-radius:99px;background:var(--green)}
+    /* BUTTONS */
+    .btn{display:block;width:100%;padding:12px;border-radius:var(--radius);border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .18s;}
+    .btn+.btn{margin-top:8px;}
+    .btn-primary{background:var(--accent);color:#000;} .btn-primary:hover{opacity:.9;transform:translateY(-1px);}
+    .btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text);}
+    .btn-danger{background:rgba(248,81,73,.12);border:1px solid var(--red);color:var(--red);}
+    .btn-green{background:rgba(63,185,80,.15);border:1px solid var(--green);color:var(--green);}
+    .btn-sm{padding:6px 12px;border-radius:7px;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+    .btn-sm-danger{background:rgba(248,81,73,.12);border:1px solid var(--red);color:var(--red);}
+    .btn-sm-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text);}
 
-/* Images grid inside chapter */
-.ch-images{display:none;border-top:1px solid var(--border);padding:10px}
-.ch-card.open .ch-images{display:block}
-.img-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.img-thumb{aspect-ratio:1;border-radius:6px;overflow:hidden;border:2px solid var(--border);cursor:pointer;position:relative;transition:all .15s}
-.img-thumb:active{transform:scale(.92)}
-.img-thumb img{width:100%;height:100%;object-fit:cover}
-.img-thumb.used{opacity:.4}
-.img-thumb.used::after{content:'✓';position:absolute;inset:0;background:rgba(239,68,68,.3);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.8rem}
-.img-thumb.fresh{border-color:var(--green)}
+    /* FORM */
+    .field{margin-bottom:12px;}
+    .field-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;}
+    .field-input,.field-select{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+    .field-input:focus,.field-select:focus{border-color:var(--accent);}
+    .field-select option{background:var(--surface2);}
+    .row-2{display:flex;gap:8px;} .row-2>*{flex:1;}
+    .range-type{display:flex;gap:8px;margin-bottom:10px;}
+    .range-opt{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;}
+    .range-opt.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
 
-/* ══════════════ GENERATE PAGE ══════════════ */
-.paper-config{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:10px}
-.pc-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.pc-row:last-child{margin-bottom:0}
-.pc-label{font-size:.72rem;font-weight:600;color:var(--t2)}
-.pc-val{font-family:var(--mono);font-size:.8rem;font-weight:700;color:var(--text)}
-.num-inp{background:var(--s3);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:.82rem;width:65px;text-align:center;outline:none}
-.num-inp:focus{border-color:var(--cyan)}
-select.num-inp{width:auto;font-size:.72rem;text-align:left;padding-right:8px}
+    /* STATS */
+    .stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+    .stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
+    .stat-num{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+    .stat-lbl{font-size:11px;color:var(--text-muted);margin-top:2px;}
+    .n-yellow{color:var(--accent);} .n-green{color:var(--green);} .n-red{color:var(--red);}
 
-/* Chapter distribution */
-.ch-dist-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s3);border-radius:8px;margin-bottom:5px}
-.ch-dist-name{flex:1;font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ch-dist-avail{font-size:.62rem;color:var(--t2);font-family:var(--mono)}
-.ch-dist-inp{width:50px;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px;color:var(--text);font-family:var(--mono);font-size:.78rem;text-align:center}
-.ch-dist-inp:focus{border-color:var(--cyan)}
+    /* LEVEL DISTRIBUTION */
+    .lv-dist-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+    .lv-dist-row{display:flex;align-items:center;gap:10px;}
+    .lv-dist-label{font-size:11px;font-weight:700;min-width:70px;flex-shrink:0;}
+    .lv-dist-bar-wrap{flex:1;background:var(--surface2);border-radius:99px;height:8px;overflow:hidden;}
+    .lv-dist-bar{height:100%;border-radius:99px;transition:width .5s;}
+    .lv-dist-count{font-size:11px;font-weight:700;min-width:28px;text-align:right;flex-shrink:0;}
 
-/* Generated paper output */
-.gen-paper-wrap{background:var(--s2);border:1px solid var(--border2);border-radius:12px;overflow:hidden;margin-bottom:10px}
-.gp-header{background:var(--s3);padding:12px 14px;border-bottom:1px solid var(--border)}
-.gp-title{font-size:.88rem;font-weight:800;margin-bottom:3px}
-.gp-meta{font-size:.62rem;color:var(--t2);font-family:var(--mono)}
-.gp-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.gp-chip{font-size:.62rem;padding:2px 8px;border-radius:4px;border:1px solid var(--border);color:var(--t2)}
-.gp-chip.fresh{background:var(--gdim);border-color:rgba(34,197,94,.25);color:var(--green)}
+    /* CHAPTER ACCORDION */
+    .section-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;}
+    .acc-item{border-bottom:1px solid var(--border);}
+    .acc-item:last-child{border-bottom:none;}
+    .acc-header{display:flex;justify-content:space-between;align-items:center;padding:10px 0;cursor:pointer;font-size:13px;font-weight:600;gap:6px;}
+    .acc-header:hover{color:var(--accent);}
+    .acc-arrow{color:var(--text-muted);font-size:11px;transition:transform .2s;flex-shrink:0;}
+    .acc-body{display:none;padding-bottom:10px;}
+    .acc-item.open .acc-arrow{transform:rotate(90deg);}
+    .acc-item.open .acc-body{display:block;}
 
-/* Paper section blocks */
-.gp-section{border-bottom:1px solid var(--border)}
-.gp-section:last-child{border-bottom:none}
-.gp-sec-head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:var(--s3)}
-.gp-sec-left{display:flex;align-items:center;gap:8px}
-.gp-range{font-family:var(--mono);font-size:.68rem;font-weight:700;color:var(--cyan);background:var(--cdim);border:1px solid rgba(6,182,212,.2);padding:2px 7px;border-radius:4px}
-.gp-ch-name{font-size:.78rem;font-weight:700}
-.gp-chev{color:var(--t2);font-size:.65rem;transition:transform .2s}
-.gp-chev.open{transform:rotate(180deg)}
-.gp-sec-body{display:none;padding:10px}
-.gp-sec-body.open{display:block}
-.gp-img-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.gp-img{aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
-.gp-img img{width:100%;height:100%;object-fit:cover}
+    /* CHAPTER PROGRESS BAR */
+    .ch-prog-wrap{background:var(--surface2);border-radius:99px;height:4px;overflow:hidden;margin:6px 0 8px;}
+    .ch-prog-bar{height:100%;border-radius:99px;background:var(--green);transition:width .4s;}
 
-/* Preview canvas area */
-.preview-canvas{background:#fff;border-radius:8px;padding:15px;margin-bottom:10px;min-height:200px}
-.preview-canvas img{max-width:100%;margin-bottom:10px;border-radius:4px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;}
+    .badge-accent{background:var(--accent-dim);color:var(--accent);}
+    .badge-green{background:rgba(63,185,80,.12);color:var(--green);}
+    .badge-blue{background:rgba(88,166,255,.12);color:var(--blue);}
 
-/* ══════════════ SETTINGS PAGE ══════════════ */
-.set-card{background:var(--s1);border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:7px}
-.set-lbl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t2);margin-bottom:6px}
-.set-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
-.set-row:last-child{border-bottom:none}
-.set-info h4{font-size:.82rem;font-weight:600;margin-bottom:2px}
-.set-info p{font-size:.68rem;color:var(--t2)}
+    /* Q GRID */
+    .q-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+    .q-chip{padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);}
 
-/* ══════════════ MODAL ══════════════ */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:flex-end;justify-content:center}
-.modal-bg.open{display:flex}
-.modal-sheet{width:100%;max-width:480px;background:var(--s1);border-radius:18px 18px 0 0;padding:14px 16px calc(34px + env(safe-area-inset-bottom));border-top:1px solid var(--border2);max-height:80vh;overflow-y:auto}
-.modal-handle{width:30px;height:3px;background:var(--border2);border-radius:2px;margin:0 auto 13px}
-.modal-title{font-size:.95rem;font-weight:800;margin-bottom:4px}
-.modal-hint{font-size:.72rem;color:var(--t2);margin-bottom:12px;line-height:1.5}
-.modal-inp{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);font-size:.88rem;outline:none;margin-bottom:8px;transition:border-color .15s;font-family:var(--sans)}
-.modal-inp:focus{border-color:var(--green)}
-.mbtn-row{display:flex;gap:7px;margin-top:6px}
-.mbtn{padding:11px;border-radius:10px;border:none;font-size:.8rem;font-weight:700;cursor:pointer;font-family:var(--sans);flex:1;transition:all .15s}
-.mbtn:active{transform:scale(.95)}
-.mbtn-g{background:var(--green);color:#000}
-.mbtn-c{background:var(--cyan);color:#000}
-.mbtn-ghost{background:var(--s3);color:var(--t2);border:1px solid var(--border)}
+    /* SEARCH */
+    .search-wrap{position:relative;margin-bottom:12px;}
+    .search-input{width:100%;padding:9px 12px 9px 34px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+    .search-input:focus{border-color:var(--accent);}
+    .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;}
 
-/* ══════════════ OVERLAY ══════════════ */
-#dl-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:400;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px}
-#dl-overlay.open{display:flex}
-.dl-spin{width:40px;height:40px;border:3px solid var(--border2);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.dl-text{font-size:.8rem;color:var(--text);text-align:center}
-.dl-bar{width:200px;height:5px;background:var(--border);border-radius:99px;overflow:hidden}
-.dl-fill{height:100%;background:var(--cyan);border-radius:99px;transition:width .3s}
+    /* LEVEL FILTER */
+    .lv-filter-row{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;}
+    .lv-fc{flex-shrink:0;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
 
-/* Toast */
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:8px 15px;font-size:.74rem;font-weight:600;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap;z-index:500;box-shadow:0 8px 24px rgba(0,0,0,.5)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.s{border-color:rgba(34,197,94,.35);color:var(--green)}
-.toast.e{border-color:rgba(239,68,68,.35);color:var(--red)}
-.toast.a{border-color:rgba(245,158,11,.35);color:var(--amber)}
-</style>
+    /* UNASSIGNED ALERT */
+    .alert-box{border-radius:var(--radius);padding:10px 14px;margin-bottom:10px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;}
+    .alert-warn{background:rgba(240,165,0,.1);border:1px solid rgba(240,165,0,.3);color:var(--accent);}
+
+    /* DONE BANNER */
+    .done-banner{background:rgba(63,185,80,.1);border:1px solid var(--green);border-radius:var(--radius);padding:12px;text-align:center;color:var(--green);font-weight:600;font-size:14px;margin-bottom:10px;}
+
+    .legend{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+    .leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);}
+    .leg-dot{width:7px;height:7px;border-radius:50%;}
+
+    .stu-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+    .stu-item:last-child{border-bottom:none;}
+    .stu-name{font-size:14px;font-weight:600;}
+    .stu-meta{font-size:11px;color:var(--text-muted);margin-top:1px;}
+
+    hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
+
+    /* LEVEL MIX SETTINGS */
+    .mix-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .mix-item{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px;}
+    .mix-label{font-size:11px;font-weight:700;margin-bottom:6px;}
+    .mix-input{width:100%;background:none;border:none;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;outline:none;text-align:center;}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:13px;font-weight:500;transition:transform .3s;z-index:999;white-space:nowrap;}
+    .toast.show{transform:translateX(-50%) translateY(0);}
+  </style>
 </head>
 <body>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="logo">Q<em>Bank</em> <span class="logo-badge">v2</span></div>
-  <div class="tbbtns">
-    <button class="icon-btn g" onclick="saveToGithub()">↑ Save</button>
-    <button class="icon-btn b" onclick="loadFromGithub()">↓ Sync</button>
+<header>
+  <div class="logo">Q<span>Bank</span></div>
+  <div class="header-right">
+    <div class="streak-pill" id="streakPill" style="display:none">🔥 <span id="streakCount">0</span></div>
+    <div class="date-pill" id="headerDate">—</div>
   </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('today')">📋 Aaj</button>
+  <button class="tab-btn" onclick="switchTab('add')">➕ Add</button>
+  <button class="tab-btn" onclick="switchTab('stats')">📊 Stats</button>
+  <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings</button>
 </div>
 
-<div class="main">
+<div class="content">
 
-<!-- ══════ HOME ══════ -->
-<div class="page active" id="page-home">
-<div class="pi">
-  <div class="hero">
-    <div class="hero-tag">Question Bank</div>
-    <div class="hero-title">QBank 📚</div>
-    <div class="hero-sub">MCQ images store karo • Auto test generate karo • Instant download</div>
-    <div class="hero-stats">
-      <div class="hstat"><div class="hstat-val" id="h-total">0</div><div class="hstat-lbl">Total Qs</div></div>
-      <div class="hstat"><div class="hstat-val" id="h-used">0</div><div class="hstat-lbl">Used</div></div>
-      <div class="hstat"><div class="hstat-val" id="h-fresh">0</div><div class="hstat-lbl">Fresh</div></div>
-      <div class="hstat"><div class="hstat-val" id="h-chapters">0</div><div class="hstat-lbl">Chapters</div></div>
+  <!-- ===== AAJ ===== -->
+  <div class="tab-panel active" id="panel-today">
+    <div id="todayEmpty" class="empty-state" style="display:none">
+      <div class="empty-icon">📚</div>
+      <div class="empty-title">Koi question nahi</div>
+      <div class="empty-sub">"Add" tab mein jaao,<br>pehle student banao, phir questions add karo.</div>
     </div>
-  </div>
-
-  <div style="display:flex;align-items:center;justify-content:space-between;">
-    <div class="sl" style="flex:1;margin:0 0 9px;">Chapters</div>
-    <button class="icon-btn c" onclick="scanGitHub()" style="margin-bottom:9px;margin-left:10px;">🔍 Scan GitHub</button>
-  </div>
-
-  <div id="chapters-list"></div>
-  
-  <button class="big-btn btn-c" onclick="showPage('generate')">⚡ Test Generator</button>
-</div>
-</div>
-
-<!-- ══════ GENERATE ══════ -->
-<div class="page" id="page-generate">
-<div class="pi">
-  <div class="sl" style="margin-top:4px;">⚡ Test Generator</div>
-  
-  <!-- Config -->
-  <div class="paper-config">
-    <div class="pc-row">
-      <span class="pc-label">Total Questions</span>
-      <input class="num-inp" id="paperQ" type="number" value="" placeholder="?" min="1" max="200" oninput="updateDistTotal()">
-    </div>
-    <div class="pc-row">
-      <span class="pc-label">Priority Mode</span>
-      <select class="num-inp" id="paperMode" onchange="onModeChange()">
-        <option value="fresh">🟢 Fresh First</option>
-        <option value="balanced">⚖ Balanced</option>
-        <option value="all_equal">📊 All Equal</option>
-        <option value="custom">🎛 Custom</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Chapter Distribution -->
-  <div id="chDistSection">
-    <div class="sl">
-      Chapter Distribution
-      <span id="dist-total-badge" style="font-size:.6rem;padding:2px 8px;border-radius:4px;background:var(--gdim);color:var(--green);font-weight:700;letter-spacing:0;text-transform:none;margin-left:4px;">0/0</span>
-      <button class="icon-btn" onclick="resetChDist()" style="margin-left:auto;height:22px;font-size:.58rem;">↺ Auto</button>
-    </div>
-    <div id="ch-dist-editor"></div>
-  </div>
-
-  <button class="big-btn btn-c" onclick="generatePaper()" style="margin-top:10px;">⚡ Generate Test</button>
-
-  <!-- Output -->
-  <div id="paperOutput" style="display:none;margin-top:12px;">
-    <div class="sl">Generated Paper</div>
-    <div id="paperContent"></div>
-    
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px;">
-      <button class="big-btn btn-c" style="margin:0;font-size:.75rem;" onclick="downloadImages()">🖼 Images</button>
-      <button class="big-btn" style="margin:0;font-size:.75rem;background:var(--cyan);color:#000;" onclick="downloadZip()">🗜 ZIP</button>
-    </div>
-    <button class="big-btn" style="background:var(--red);color:#fff;font-size:.75rem;" onclick="downloadPDF()">📄 PDF (Claude ke liye)</button>
-    <button class="big-btn btn-g" onclick="markPaperDone()">✓ Mark Done & Save</button>
-    <button class="big-btn btn-o" onclick="generatePaper()">↺ Regenerate</button>
-  </div>
-</div>
-</div>
-
-<!-- ══════ SETTINGS ══════ -->
-<div class="page" id="page-settings">
-<div class="pi">
-  <div class="sl" style="margin-top:4px;">GitHub Config</div>
-
-  <div class="set-card" style="background:rgba(6,182,212,.05);border-color:rgba(6,182,212,.15);">
-    <div style="font-size:.62rem;color:var(--cyan);font-weight:700;margin-bottom:6px;">📌 Repo (fixed)</div>
-    <div style="font-family:var(--mono);font-size:.78rem;color:var(--t2);">rohanapatel121212-debug / qbank</div>
-  </div>
-
-  <div class="set-card">
-    <div class="set-lbl">Personal Access Token <span style="color:var(--red);">*</span></div>
-    <input class="inp" id="ghToken" type="password" placeholder="ghp_xxxxxxxxxxxx">
-    <div style="font-size:.6rem;color:var(--t2);margin-top:6px;line-height:1.7;">
-      GitHub → Settings → Developer settings → Personal access tokens → Generate → <b style="color:var(--green);">repo</b> tick karo
-    </div>
-  </div>
-
-  <button class="big-btn btn-g" onclick="saveSettings()">✓ Save Token & Sync</button>
-  
-  <div class="sl" style="margin-top:16px;">Data Management</div>
-  
-  <div class="set-card">
-    <div class="set-row">
-      <div class="set-info">
-        <h4>Export Data</h4>
-        <p>Download tracker JSON backup</p>
+    <div id="todayMain" style="display:none">
+      <div class="stu-row" id="todayStuRow"></div>
+      <div id="unassignedAlert" style="display:none"></div>
+      <div class="card">
+        <div class="prog-row">
+          <div class="prog-label">Aaj complete</div>
+          <div><span class="prog-count" id="doneCount">0</span><span class="prog-total"> / <span id="totalCount">0</span></span></div>
+        </div>
+        <div class="prog-bar-wrap"><div class="prog-bar" id="progBar" style="width:0%"></div></div>
       </div>
-      <button class="icon-btn" onclick="exportData()">Export</button>
+      <div id="doneBanner" class="done-banner" style="display:none">🎉 Aaj ke saare ho gaye! Kal naya list milega.</div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot p-wrong"></div> Galat (priority)</div>
+        <div class="leg-item"><div class="leg-dot p-due"></div> SRS due</div>
+        <div class="leg-item"><div class="leg-dot p-new"></div> Naya</div>
+      </div>
+      <div class="q-list" id="qList"></div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-ghost" onclick="regenerate()">🔄 Naya List Banao</button>
+      </div>
     </div>
   </div>
-</div>
-</div>
 
-</div><!-- /main -->
+  <!-- ===== ADD ===== -->
+  <div class="tab-panel" id="panel-add">
+    <div class="card">
+      <div class="card-title">👤 Student Add Karo</div>
+      <div class="row-2">
+        <div class="field"><div class="field-label">Naam</div><input class="field-input" id="addStuName" placeholder="Bhumi" /></div>
+        <div class="field"><div class="field-label">Class</div><input class="field-input" id="addStuClass" placeholder="5" /></div>
+      </div>
+      <button class="btn btn-primary" onclick="addStudent()">Student Add Karo</button>
+    </div>
 
-<!-- BOTTOM NAV -->
-<div class="bnav" id="bnav">
-  <div class="ni active" onclick="showPage('home')"><div class="ni-icon">📚</div><div class="ni-lbl">Home</div></div>
-  <div class="ni" onclick="showPage('generate');renderChDistEditor()"><div class="ni-icon">⚡</div><div class="ni-lbl">Generate</div><div class="ni-badge" id="nb-paper"></div></div>
-  <div class="ni" onclick="showPage('settings')"><div class="ni-icon">⚙️</div><div class="ni-lbl">Settings</div></div>
-</div>
+    <div class="card">
+      <div class="card-title">📝 Questions Add Karo</div>
+      <div class="field"><div class="field-label">Student</div>
+        <select class="field-select" id="addQStu"><option value="">— Select Student —</option></select>
+      </div>
+      <div class="field"><div class="field-label">Chapter ka Naam</div><input class="field-input" id="addQChapter" placeholder="Fractions" /></div>
+      <div class="field"><div class="field-label">Type (Exercise / Example / Practice / MCQ etc.)</div><input class="field-input" id="addQType" placeholder="Exercise" /></div>
+      <div class="field">
+        <div class="field-label">Q Numbers</div>
+        <div class="range-type">
+          <div class="range-opt active" id="optSingle" onclick="setRangeMode('single')">Individual</div>
+          <div class="range-opt" id="optRange" onclick="setRangeMode('range')">Range</div>
+        </div>
+        <div id="modeSingle"><input class="field-input" id="addQNums" placeholder="1, 3, 5, 7" /><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Comma se alag karo</div></div>
+        <div id="modeRange" style="display:none">
+          <div class="row-2">
+            <div><div class="field-label">Shuru se</div><input class="field-input" id="addRangeFrom" type="number" placeholder="1" /></div>
+            <div><div class="field-label">Tak</div><input class="field-input" id="addRangeTo" type="number" placeholder="50" /></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addQuestions()">Questions Add Karo</button>
+    </div>
 
-<!-- MODAL -->
-<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="mTitle"></div>
-    <div class="modal-hint" id="mHint"></div>
-    <div id="mBody"></div>
-    <div class="mbtn-row">
-      <button class="mbtn mbtn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="mbtn mbtn-g" onclick="confirmModal()">Confirm</button>
+    <div class="card" id="browseCard" style="display:none">
+      <div class="card-title">📂 Added Questions</div>
+      <div id="browseList"></div>
     </div>
   </div>
-</div>
 
-<!-- OVERLAY -->
-<div id="dl-overlay">
-  <div class="dl-spin"></div>
-  <div class="dl-text" id="dl-text">Loading...</div>
-  <div class="dl-bar"><div class="dl-fill" id="dl-fill" style="width:0%"></div></div>
-</div>
+  <!-- ===== STATS ===== -->
+  <div class="tab-panel" id="panel-stats">
+    <div class="stu-row" id="statsStuRow"></div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num n-yellow" id="sTot">0</div><div class="stat-lbl">Total</div></div>
+      <div class="stat-box"><div class="stat-num n-green" id="sDone">0</div><div class="stat-lbl">Done ≥1x</div></div>
+      <div class="stat-box"><div class="stat-num n-red" id="sWrong">0</div><div class="stat-lbl">Galat wale</div></div>
+    </div>
+    <div id="statsUnassigned" style="display:none"></div>
+    <div class="section-label">Level Distribution</div>
+    <div class="lv-dist-grid" id="lvDistGrid"></div>
+    <div class="lv-filter-row" id="lvFilterRow"></div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="chSearch" placeholder="Chapter search..." oninput="renderChapters()" />
+    </div>
+    <div class="section-label">Chapter-wise</div>
+    <div class="card" style="padding:6px 14px;"><div id="chapterAcc"></div></div>
+  </div>
 
-<!-- TOAST -->
+  <!-- ===== SETTINGS ===== -->
+  <div class="tab-panel" id="panel-settings">
+    <div class="card">
+      <div class="card-title">📅 Daily Plan</div>
+      <div class="field"><div class="field-label">Default total questions per day</div><input class="field-input" type="number" id="setCount" placeholder="20" /></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Ya level-wise mix set karo (0 = use nahi hoga):</div>
+      <div class="mix-grid" id="mixGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👥 Students</div>
+      <div id="stuList"></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+
+    <hr class="div" />
+
+    <div class="card">
+      <div class="card-title">💾 Backup & Restore</div>
+      <button class="btn btn-green" onclick="exportData()">📤 Data Export Karo (JSON)</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">📥 Data Import Karo (JSON)</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
+    </div>
+
+    <hr class="div" />
+
+    <div class="card">
+      <div class="card-title">⚠️ Reset</div>
+      <button class="btn btn-danger" onclick="resetProgress()">🗑️ Sirf Progress Reset (Questions + Levels rahenge)</button>
+      <button class="btn btn-danger" onclick="resetAll()">💣 Sab Kuch Delete Karo</button>
+    </div>
+  </div>
+
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════════════════════
-// CONFIG
-// ══════════════════════════════════════════════════════════
-const APP_CONFIG = {
-  TRACKER_FILE: 'qbank_tracker.json',
-  IMAGES_PATH: 'images',
-  DB_NAME: 'QBankDB'
+// ── LEVELS ────────────────────────────────────────────────────
+const LEVELS = [
+  { key:'lv0', label:'Zero Level', short:'Zero', color:'#6e7681', interval:1  },
+  { key:'lv1', label:'Level 1',    short:'Lv 1', color:'#58a6ff', interval:2  },
+  { key:'lv2', label:'Level 2',    short:'Lv 2', color:'#f0a500', interval:4  },
+  { key:'lv3', label:'Level 3',    short:'Lv 3', color:'#3fb950', interval:7  },
+  { key:'lvE', label:'Exam Level', short:'Exam', color:'#bc8cff', interval:14 },
+];
+// null = unassigned = treat as daily (interval 1)
+function lvInfo(key){ return LEVELS.find(l=>l.key===key)||{key:null,label:'Unset',short:'—',color:'#6e7681',interval:1}; }
+function lvInterval(key){ return lvInfo(key).interval; }
+
+// ── STORAGE ───────────────────────────────────────────────────
+const S = {
+  students()     { try{return JSON.parse(localStorage.getItem('qb_s')||'[]');}catch{return[];} },
+  setStudents(v) { localStorage.setItem('qb_s',JSON.stringify(v)); },
+  questions()    { try{return JSON.parse(localStorage.getItem('qb_q')||'{}');}catch{return{};} },
+  setQuestions(v){ localStorage.setItem('qb_q',JSON.stringify(v)); },
+  settings()     { try{return JSON.parse(localStorage.getItem('qb_cfg')||'null')||defSettings();}catch{return defSettings();} },
+  setSettings(v) { localStorage.setItem('qb_cfg',JSON.stringify(v)); },
+  streak()       { try{return JSON.parse(localStorage.getItem('qb_streak')||'null')||{count:0,last:''};}catch{return{count:0,last:''};} },
+  setStreak(v)   { localStorage.setItem('qb_streak',JSON.stringify(v)); },
+  today() {
+    try{
+      const t=JSON.parse(localStorage.getItem('qb_today')||'null');
+      if(!t)return{};
+      if(t.date!==ds()){localStorage.removeItem('qb_today');return{};}
+      return t.data||{};
+    }catch{return{};}
+  },
+  setToday(v){ localStorage.setItem('qb_today',JSON.stringify({date:ds(),data:v})); },
 };
 
-// ══════════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════════
-let data = { chapters: [], questions: {}, history: [] };
-let chDist = {};           // manual chapter distribution
-let currentPaper = null;   // generated paper
-let modalMode = null;
+function defSettings(){ return {dailyCount:20, mix:{lv0:0,lv1:0,lv2:0,lv3:0,lvE:0}}; }
+function ds(){ return new Date().toISOString().split('T')[0]; }
+function daysSince(d){ return Math.floor((new Date(ds())-new Date(d))/86400000); }
 
-// ══════════════════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════════════════
-window.onload = () => {
-  loadSettings();
-  loadLocalData();
-  const s = getS();
-  if (s.token) {
-    showOverlay('GitHub se sync ho raha hai...');
-    loadFromGithub().finally(() => {
-      hideOverlay();
-      renderHome();
-    });
+let activeTodayStu=null, activeStatsStu=null, rangeMode='single', activeStatLv='all';
+
+// ── TAB ───────────────────────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['today','add','stats','settings'][i]===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='today')    renderToday();
+  if(tab==='add')      renderAdd();
+  if(tab==='stats')    renderStats();
+  if(tab==='settings') renderSettings();
+}
+
+// ── STREAK ────────────────────────────────────────────────────
+function updateStreak(completed){
+  if(!completed) return;
+  const str=S.streak();
+  const yest=new Date(); yest.setDate(yest.getDate()-1);
+  const yesterdayStr=yest.toISOString().split('T')[0];
+  if(str.last===ds()) return; // already counted today
+  if(str.last===yesterdayStr) str.count++;
+  else if(str.last!==ds()) str.count=1;
+  str.last=ds();
+  S.setStreak(str);
+  renderStreak();
+}
+function renderStreak(){
+  const str=S.streak();
+  const pill=document.getElementById('streakPill');
+  if(str.count>=2){
+    pill.style.display='';
+    document.getElementById('streakCount').textContent=str.count+' din';
   } else {
-    renderHome();
-    showPage('settings');
-    showToast('Pehle GitHub token set karo ⚙️', 'a');
-  }
-};
-
-// ══════════════════════════════════════════════════════════
-// SCAN GITHUB - Auto detect images
-// ══════════════════════════════════════════════════════════
-async function scanGitHub() {
-  const s = getS();
-  if (!s.token) { 
-    showToast('Pehle GitHub token set karo!', 'e'); 
-    showPage('settings'); 
-    return; 
-  }
-  
-  showOverlay('GitHub scan ho raha hai...');
-  
-  try {
-    // Step 1: Get list of folders in images/
-    const foldersUrl = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${APP_CONFIG.IMAGES_PATH}`;
-    const foldersRes = await fetch(foldersUrl, { 
-      headers: { 'Authorization': `token ${s.token}` } 
-    });
-    
-    if (!foldersRes.ok) {
-      if (foldersRes.status === 404) {
-        hideOverlay();
-        showToast('images/ folder nahi mila! Pehle GitHub pe banao.', 'e');
-        return;
-      }
-      throw new Error('GitHub API error');
-    }
-    
-    const folders = await foldersRes.json();
-    const chapterFolders = folders.filter(f => f.type === 'dir');
-    
-    if (!chapterFolders.length) {
-      hideOverlay();
-      showToast('Koi chapter folder nahi mila! images/ChapterName/ banao.', 'a');
-      return;
-    }
-    
-    let newChapters = 0, newImages = 0;
-    
-    // Step 2: For each folder, get images
-    for (let i = 0; i < chapterFolders.length; i++) {
-      const folder = chapterFolders[i];
-      const chapterName = folder.name;
-      
-      updateOverlay(`Scanning ${chapterName}...`, (i / chapterFolders.length) * 80);
-      
-      // Add chapter if not exists
-      if (!data.chapters.includes(chapterName)) {
-        data.chapters.push(chapterName);
-        data.questions[chapterName] = [];
-        newChapters++;
-      }
-      
-      // Get images in this folder
-      const imagesUrl = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${APP_CONFIG.IMAGES_PATH}/${chapterName}`;
-      const imagesRes = await fetch(imagesUrl, { 
-        headers: { 'Authorization': `token ${s.token}` } 
-      });
-      
-      if (!imagesRes.ok) continue;
-      
-      const files = await imagesRes.json();
-      const imageFiles = files.filter(f => 
-        f.type === 'file' && /\.(png|jpg|jpeg|gif|webp)$/i.test(f.name)
-      );
-      
-      // Add new images
-      const existingUrls = (data.questions[chapterName] || []).map(q => q.url);
-      
-      for (const img of imageFiles) {
-        const imgUrl = `https://raw.githubusercontent.com/${s.owner}/${s.repo}/main/${APP_CONFIG.IMAGES_PATH}/${chapterName}/${img.name}`;
-        
-        if (!existingUrls.includes(imgUrl)) {
-          if (!data.questions[chapterName]) data.questions[chapterName] = [];
-          
-          data.questions[chapterName].push({
-            id: `${chapterName}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
-            filename: img.name,
-            url: imgUrl,
-            used: false,
-            scannedAt: new Date().toISOString()
-          });
-          newImages++;
-        }
-      }
-    }
-    
-    // Step 3: Save to local and GitHub
-    updateOverlay('Saving...', 90);
-    saveLocalData();
-    await saveToGithub();
-    
-    hideOverlay();
-    renderHome();
-    
-    if (newChapters || newImages) {
-      showToast(`✅ Found: ${newChapters} new chapters, ${newImages} new images!`, 's');
-    } else {
-      showToast('Koi naya image nahi mila. Sab already synced hai!', 'a');
-    }
-    
-  } catch (e) {
-    hideOverlay();
-    showToast('Scan failed: ' + e.message, 'e');
-    console.error(e);
+    pill.style.display='none';
   }
 }
 
-// ══════════════════════════════════════════════════════════
-// NAVIGATION
-// ══════════════════════════════════════════════════════════
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  document.querySelectorAll('.ni')[['home','generate','settings'].indexOf(name)]?.classList.add('active');
-  if (name === 'home') renderHome();
-  if (name === 'generate') renderChDistEditor();
+// ── SRS + LEVEL ───────────────────────────────────────────────
+function baseInterval(q){ return lvInterval(q.level||null); }
+
+function isDue(q){
+  if(!q.lastDate) return false;
+  return daysSince(q.lastDate) >= Math.max(baseInterval(q), q.interval||1);
+}
+function overdue(q){
+  if(!q.lastDate) return 0;
+  return daysSince(q.lastDate) - Math.max(baseInterval(q), q.interval||1);
+}
+function prio(q){
+  if(!q.lastDate) return 'new';
+  if((q.wrong||0)>0 && isDue(q)) return 'wrong';
+  if(isDue(q)) return 'due';
+  return 'done';
 }
 
-// ══════════════════════════════════════════════════════════
-// SETTINGS
-// ══════════════════════════════════════════════════════════
-const FIXED_OWNER = 'rohanapatel121212-debug';
-const FIXED_REPO = 'qbank';
+// ── RECOMMEND ─────────────────────────────────────────────────
+function recommend(stuId){
+  const qs=S.questions();
+  const settings=S.settings();
+  const mix=settings.mix||{};
+  const totalMix=Object.values(mix).reduce((a,b)=>a+(b||0),0);
+  const useMix = totalMix>0;
 
-function getS() {
-  try { 
-    const s = JSON.parse(localStorage.getItem('qbank_cfg') || '{}');
-    s.owner = FIXED_OWNER;
-    s.repo = FIXED_REPO;
-    return s;
+  const buckets={lv0:[],lv1:[],lv2:[],lv3:[],lvE:[],null:[]};
+  for(const[id,q]of Object.entries(qs)){
+    if(q.student!==stuId) continue;
+    const p=prio(q);
+    if(p==='done') continue;
+    const lv=q.level||'null';
+    if(!buckets[lv]) buckets[lv]=[];
+    buckets[lv].push({id,p,q});
   }
-  catch { return { owner: FIXED_OWNER, repo: FIXED_REPO }; }
-}
-function loadSettings() {
-  const s = getS();
-  document.getElementById('ghToken').value = s.token || '';
-}
-function saveSettings() {
-  const token = document.getElementById('ghToken').value.trim();
-  if (!token) { showToast('Token daalo!', 'e'); return; }
-  localStorage.setItem('qbank_cfg', JSON.stringify({ token }));
-  showToast('Token saved! Syncing...', 's');
-  loadFromGithub();
-}
 
-// ══════════════════════════════════════════════════════════
-// LOCAL STORAGE
-// ══════════════════════════════════════════════════════════
-function saveLocalData() {
-  localStorage.setItem('qbank_data', JSON.stringify(data));
-}
-function loadLocalData() {
-  try {
-    const saved = localStorage.getItem('qbank_data');
-    if (saved) data = JSON.parse(saved);
-  } catch {}
-}
-
-// ══════════════════════════════════════════════════════════
-// GITHUB API
-// ══════════════════════════════════════════════════════════
-async function loadFromGithub() {
-  const s = getS();
-  if (!s.token) return;
-  try {
-    const url = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${APP_CONFIG.TRACKER_FILE}`;
-    const res = await fetch(url, { headers: { 'Authorization': `token ${s.token}` } });
-    if (res.ok) {
-      const json = await res.json();
-      const content = JSON.parse(decodeURIComponent(escape(atob(json.content))));
-      data = { chapters: content.chapters || [], questions: content.questions || {}, history: content.history || [] };
-      saveLocalData();
-      showToast('✓ Synced from GitHub!', 's');
-    }
-  } catch (e) { console.error(e); }
-  renderHome();
-}
-
-async function saveToGithub() {
-  const s = getS();
-  if (!s.token) { showToast('GitHub token set karo!', 'e'); return; }
-  
-  showOverlay('Saving to GitHub...');
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-  const url = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${APP_CONFIG.TRACKER_FILE}`;
-  
-  let sha = null;
-  try {
-    const existing = await fetch(url, { headers: { 'Authorization': `token ${s.token}` } });
-    if (existing.ok) sha = (await existing.json()).sha;
-  } catch {}
-  
-  const body = { message: 'Update QBank tracker', content, branch: 'main' };
-  if (sha) body.sha = sha;
-  
-  try {
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers: { 'Authorization': `token ${s.token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (res.ok) showToast('✓ Saved to GitHub!', 's');
-    else throw new Error('Save failed');
-  } catch (e) { showToast('Save failed: ' + e.message, 'e'); }
-  hideOverlay();
-}
-
-// ══════════════════════════════════════════════════════════
-// HOME PAGE
-// ══════════════════════════════════════════════════════════
-function renderHome() {
-  let total = 0, used = 0;
-  Object.values(data.questions).forEach(qs => {
-    total += qs.length;
-    used += qs.filter(q => q.used).length;
+  // Sort each bucket: wrong first, then due, then new; within same prio: most wrong / most overdue first
+  const sortBucket=arr=>arr.sort((a,b)=>{
+    const po={wrong:0,due:1,new:2};
+    if(po[a.p]!==po[b.p]) return po[a.p]-po[b.p];
+    if(a.p==='wrong') return (b.q.wrong||0)-(a.q.wrong||0);
+    if(a.p==='due') return overdue(b.q)-overdue(a.q);
+    return 0;
   });
-  
-  document.getElementById('h-total').textContent = total;
-  document.getElementById('h-used').textContent = used;
-  document.getElementById('h-fresh').textContent = total - used;
-  document.getElementById('h-chapters').textContent = data.chapters.length;
-  
-  const list = document.getElementById('chapters-list');
-  if (!data.chapters.length) {
-    list.innerHTML = `<div class="empty"><div class="empty-icon">📚</div><div class="empty-text">Koi chapter nahi<br>+ Chapter button dabao</div></div>`;
+  Object.values(buckets).forEach(sortBucket);
+
+  let result=[];
+  if(useMix){
+    for(const lv of Object.keys(mix)){
+      const cnt=mix[lv]||0;
+      if(!cnt) continue;
+      result.push(...buckets[lv].slice(0,cnt).map(x=>x.id));
+    }
+    // Fill remaining with unleveled or any
+    const remaining=settings.dailyCount-result.length;
+    if(remaining>0){
+      const used=new Set(result);
+      const extra=buckets['null'].filter(x=>!used.has(x.id)).slice(0,remaining);
+      result.push(...extra.map(x=>x.id));
+    }
+  } else {
+    // All together, priority sorted
+    const all=Object.values(buckets).flat();
+    sortBucket(all);
+    result=all.slice(0,settings.dailyCount).map(x=>x.id);
+  }
+  return result;
+}
+
+// ── TODAY ─────────────────────────────────────────────────────
+function renderToday(){
+  document.getElementById('headerDate').textContent=new Date().toLocaleDateString('hi-IN',{weekday:'short',day:'numeric',month:'short'});
+  renderStreak();
+  const students=S.students();
+  if(!students.length){
+    document.getElementById('todayEmpty').style.display='';
+    document.getElementById('todayMain').style.display='none';
     return;
   }
-  
-  list.innerHTML = data.chapters.map((ch, ci) => {
-    const qs = data.questions[ch] || [];
-    const total = qs.length;
-    const used = qs.filter(q => q.used).length;
-    const fresh = total - used;
-    const pct = total ? Math.round(used / total * 100) : 0;
-    
-    return `
-      <div class="ch-card" id="ch-${ci}">
-        <div class="ch-card-hdr" onclick="toggleChapter(${ci})">
-          <div class="ch-left">
-            <div class="ch-icon">📖</div>
-            <div class="ch-info">
-              <div class="ch-name">${esc(ch)}</div>
-              <div class="ch-meta">${total} Qs · ${fresh} fresh · ${used} used</div>
-            </div>
-          </div>
-          <div class="ch-right">
-            <div class="ch-pct">${pct}%</div>
-            <div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div>
-          </div>
-        </div>
-        <div class="ch-images">
-          ${total ? `<div class="img-grid">${qs.map((q, qi) => `
-            <div class="img-thumb ${q.used ? 'used' : 'fresh'}" onclick="toggleUsed('${ch}',${qi});event.stopPropagation()">
-              <img src="${q.url}" loading="lazy" alt="">
-            </div>
-          `).join('')}</div>` : '<div class="empty-text" style="padding:12px;">Koi image nahi</div>'}
-          <button class="icon-btn" style="margin-top:8px;width:100%;justify-content:center;" onclick="event.stopPropagation();confirmDeleteChapter('${ch}')">🗑 Delete Chapter</button>
-        </div>
-      </div>
-    `;
-  }).join('');
+  document.getElementById('todayEmpty').style.display='none';
+  document.getElementById('todayMain').style.display='';
+  if(!activeTodayStu||!students.find(s=>s.id===activeTodayStu)) activeTodayStu=students[0].id;
+  document.getElementById('todayStuRow').innerHTML=students.map(s=>`
+    <div class="stu-chip ${s.id===activeTodayStu?'active':''}" onclick="selTodayStu('${s.id}')">${s.name} (${s.cls})</div>
+  `).join('');
+  renderTodayList();
 }
+function selTodayStu(id){ activeTodayStu=id; renderToday(); }
 
-function toggleChapter(ci) {
-  document.getElementById(`ch-${ci}`).classList.toggle('open');
-}
-
-function toggleUsed(ch, qi) {
-  const q = data.questions[ch][qi];
-  const action = q.used ? 'Fresh' : 'Used';
-  const msg = q.used 
-    ? `"${ch}" ka Q${qi+1} wapas FRESH mark karna hai?` 
-    : `"${ch}" ka Q${qi+1} USED mark karna hai?`;
-  
-  if (confirm(msg)) {
-    q.used = !q.used;
-    saveLocalData();
-    renderHome();
-    showToast(`✓ Q${qi+1} marked as ${action}!`, 's');
+function renderTodayList(){
+  const qs=S.questions();
+  let td=S.today();
+  if(!td[activeTodayStu]){
+    td[activeTodayStu]={list:recommend(activeTodayStu),results:{}};
+    S.setToday(td);
   }
-}
+  const{list,results}=td[activeTodayStu];
+  const done=Object.values(results).filter(v=>v).length;
+  const total=list.length;
+  document.getElementById('doneCount').textContent=done;
+  document.getElementById('totalCount').textContent=total;
+  document.getElementById('progBar').style.width=total?(done/total*100)+'%':'0%';
+  const allDone=done===total&&total>0;
+  document.getElementById('doneBanner').style.display=allDone?'':'none';
+  if(allDone) updateStreak(true);
 
-function confirmDeleteChapter(ch) {
-  if (confirm(`"${ch}" aur uski saari images delete karni hain?`)) {
-    data.chapters = data.chapters.filter(c => c !== ch);
-    delete data.questions[ch];
-    saveLocalData();
-    saveToGithub();
-    renderHome();
-    showToast('Chapter deleted!', 's');
-  }
-}
+  // Unassigned alert
+  const stuQs=Object.values(qs).filter(q=>q.student===activeTodayStu);
+  const unassigned=stuQs.filter(q=>!q.level).length;
+  const alertEl=document.getElementById('unassignedAlert');
+  if(unassigned>0){
+    alertEl.style.display='';
+    alertEl.innerHTML=`<div class="alert-box alert-warn">⚠️ ${unassigned} questions ka level assign nahi hua — Stats mein check karo</div>`;
+  } else { alertEl.style.display='none'; }
 
-// ══════════════════════════════════════════════════════════
-// GENERATE PAGE
-// ══════════════════════════════════════════════════════════
-function calcAutoChDist(Q) {
-  const dist = {};
-  const chapters = data.chapters.filter(ch => (data.questions[ch] || []).length > 0);
-  if (!chapters.length || !Q) return dist;
-  
-  // Calculate available fresh per chapter
-  const freshCounts = {};
-  let totalFresh = 0;
-  chapters.forEach(ch => {
-    const fresh = (data.questions[ch] || []).filter(q => !q.used).length;
-    freshCounts[ch] = fresh;
-    totalFresh += fresh;
-  });
-  
-  // Distribute proportionally
-  let remaining = Q;
-  chapters.forEach((ch, i) => {
-    if (i === chapters.length - 1) {
-      dist[ch] = remaining;
-    } else {
-      const ratio = totalFresh ? freshCounts[ch] / totalFresh : 1 / chapters.length;
-      const count = Math.round(Q * ratio);
-      dist[ch] = Math.min(count, remaining);
-      remaining -= dist[ch];
-    }
-  });
-  
-  return dist;
-}
-
-function renderChDistEditor() {
-  const Q = parseInt(document.getElementById('paperQ').value) || 0;
-  const mode = document.getElementById('paperMode').value;
-  const container = document.getElementById('ch-dist-editor');
-  
-  const chapters = data.chapters.filter(ch => (data.questions[ch] || []).length > 0);
-  
-  if (!chapters.length) {
-    container.innerHTML = '<div class="empty-text" style="padding:12px;">Koi chapter nahi with questions</div>';
-    updateDistTotal();
+  const container=document.getElementById('qList');
+  container.innerHTML='';
+  if(!list.length){
+    container.innerHTML='<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">Aaj ke liye koi question due nahi 🎯</div>';
     return;
   }
-  
-  const autoDist = mode === 'all_equal' ? (() => {
-    const perCh = Math.floor(Q / chapters.length);
-    const rem = Q % chapters.length;
-    const d = {};
-    chapters.forEach((ch, i) => d[ch] = perCh + (i < rem ? 1 : 0));
-    return d;
-  })() : calcAutoChDist(Q);
-  
-  container.innerHTML = chapters.map(ch => {
-    const qs = data.questions[ch] || [];
-    const fresh = qs.filter(q => !q.used).length;
-    const val = chDist[ch] !== undefined ? chDist[ch] : (autoDist[ch] || 0);
-    
-    return `
-      <div class="ch-dist-row">
-        <span class="ch-dist-name">${esc(ch)}</span>
-        <span class="ch-dist-avail">${fresh}/${qs.length}</span>
-        <input type="number" class="ch-dist-inp" value="${val}" min="0" max="${qs.length}" 
-          onchange="chDist['${ch}']=parseInt(this.value)||0;updateDistTotal()">
-      </div>
-    `;
-  }).join('');
-  
-  updateDistTotal();
-}
 
-function updateDistTotal() {
-  const Q = parseInt(document.getElementById('paperQ').value) || 0;
-  const mode = document.getElementById('paperMode').value;
-  const chapters = data.chapters.filter(ch => (data.questions[ch] || []).length > 0);
-  
-  const autoDist = mode === 'all_equal' ? (() => {
-    const perCh = Math.floor(Q / chapters.length);
-    const rem = Q % chapters.length;
-    const d = {};
-    chapters.forEach((ch, i) => d[ch] = perCh + (i < rem ? 1 : 0));
-    return d;
-  })() : calcAutoChDist(Q);
-  
-  let total = 0;
-  chapters.forEach(ch => {
-    total += chDist[ch] !== undefined ? chDist[ch] : (autoDist[ch] || 0);
-  });
-  
-  const badge = document.getElementById('dist-total-badge');
-  badge.textContent = `${total}/${Q}`;
-  badge.style.background = total === Q ? 'var(--gdim)' : total > Q ? 'var(--rdim)' : 'var(--adim)';
-  badge.style.color = total === Q ? 'var(--green)' : total > Q ? 'var(--red)' : 'var(--amber)';
-}
-
-function onModeChange() {
-  chDist = {};
-  renderChDistEditor();
-}
-
-function resetChDist() {
-  chDist = {};
-  renderChDistEditor();
-  showToast('Auto distribution reset', 'a');
-}
-
-function generatePaper() {
-  const Q = parseInt(document.getElementById('paperQ').value) || 0;
-  if (!Q) { showToast('Total Questions likho!', 'e'); document.getElementById('paperQ').focus(); return; }
-  
-  const mode = document.getElementById('paperMode').value;
-  const chapters = data.chapters.filter(ch => (data.questions[ch] || []).length > 0);
-  
-  if (!chapters.length) { showToast('Koi chapter nahi with questions!', 'e'); return; }
-  
-  const autoDist = mode === 'all_equal' ? (() => {
-    const perCh = Math.floor(Q / chapters.length);
-    const rem = Q % chapters.length;
-    const d = {};
-    chapters.forEach((ch, i) => d[ch] = perCh + (i < rem ? 1 : 0));
-    return d;
-  })() : calcAutoChDist(Q);
-  
-  // Score function for sorting
-  const score = (q) => {
-    const daysSince = q.uploadDate ? Math.floor((Date.now() - new Date(q.uploadDate).getTime()) / 86400000) : 9999;
-    if (mode === 'fresh') return (q.used ? 1000 : 0) - daysSince;
-    return (q.used ? 500 : 0) - daysSince;
-  };
-  
-  const blocks = [];
-  let cursor = 1;
-  
-  chapters.forEach(ch => {
-    const wantCount = chDist[ch] !== undefined ? chDist[ch] : (autoDist[ch] || 0);
-    if (!wantCount) return;
-    
-    const pool = [...(data.questions[ch] || [])];
-    pool.sort((a, b) => score(a) - score(b));
-    
-    const picked = [];
-    for (let i = 0; i < wantCount && i < pool.length; i++) {
-      picked.push({ ...pool[i], chapter: ch });
-    }
-    
-    if (picked.length) {
-      blocks.push({
-        chapter: ch,
-        items: picked,
-        start: cursor,
-        end: cursor + picked.length - 1,
-        count: picked.length
-      });
-      cursor += picked.length;
-    }
-  });
-  
-  if (!blocks.length) { showToast('Koi questions select nahi hue!', 'e'); return; }
-  
-  currentPaper = {
-    date: new Date().toLocaleDateString('en-IN'),
-    totalQ: blocks.reduce((s, b) => s + b.count, 0),
-    blocks
-  };
-  
-  renderPaperOutput();
-  document.getElementById('nb-paper').classList.add('show');
-}
-
-function renderPaperOutput() {
-  if (!currentPaper) return;
-  
-  const freshCount = currentPaper.blocks.reduce((s, b) => s + b.items.filter(i => !i.used).length, 0);
-  const usedCount = currentPaper.totalQ - freshCount;
-  
-  const content = document.getElementById('paperContent');
-  content.innerHTML = `
-    <div class="gen-paper-wrap">
-      <div class="gp-header">
-        <div class="gp-title">📄 Test Paper — ${currentPaper.date}</div>
-        <div class="gp-meta">${currentPaper.totalQ} Questions · ${currentPaper.blocks.length} Chapters</div>
-        <div class="gp-chips">
-          <span class="gp-chip fresh">🟢 ${freshCount} Fresh</span>
-          <span class="gp-chip">${usedCount} Repeated</span>
+  list.forEach(id=>{
+    const q=qs[id]; if(!q) return;
+    const res=results[id]||null;
+    const p=prio(q);
+    const dotCls=p==='wrong'?'p-wrong':p==='due'?'p-due':'p-new';
+    const sub=p==='wrong'
+      ?`${q.wrong}x galat · ${q.chapter} · ${q.type}`
+      :p==='due'
+      ?`SRS +${overdue(q)}d · ${q.chapter} · ${q.type}`
+      :`Naya · ${q.chapter} · ${q.type}`;
+    const curLv=q.level||null;
+    const lvBtns=LEVELS.map(l=>`
+      <button class="lv-btn ${curLv===l.key?'active-'+l.key:''}" onclick="setLevel('${id}','${l.key}')">${l.short}</button>
+    `).join('');
+    const el=document.createElement('div');
+    el.className='q-item'+(res==='correct'?' correct':res==='wrong'?' wrong':'');
+    el.id='qi-'+id;
+    el.innerHTML=`
+      <div class="q-top">
+        <div class="q-dot ${dotCls}"></div>
+        <div class="q-info">
+          <div class="q-main">${q.type} Q${q.num}
+            <span class="lv-badge lv-badge-${curLv||'null'}" id="lvbadge-${id}">${lvInfo(curLv).short}</span>
+          </div>
+          <div class="q-sub">${sub}</div>
+        </div>
+        <div class="q-actions">
+          <button class="btn-mark btn-correct ${res==='correct'?'active':''}" onclick="markQ('${id}','correct')">✓</button>
+          <button class="btn-mark btn-wrong ${res==='wrong'?'active':''}" onclick="markQ('${id}','wrong')">✗</button>
         </div>
       </div>
-      ${currentPaper.blocks.map((blk, bi) => `
-        <div class="gp-section">
-          <div class="gp-sec-head" onclick="toggleSec(${bi})">
-            <div class="gp-sec-left">
-              <span class="gp-range">Q${blk.start}${blk.start !== blk.end ? '–Q'+blk.end : ''}</span>
-              <span class="gp-ch-name">${esc(blk.chapter)}</span>
-            </div>
-            <span class="gp-chev" id="gchev-${bi}">▼</span>
-          </div>
-          <div class="gp-sec-body" id="gsec-${bi}">
-            <div class="gp-img-grid">
-              ${blk.items.map(q => `<div class="gp-img"><img src="${q.url}" loading="lazy"></div>`).join('')}
-            </div>
-          </div>
+      <div class="q-level-row" id="lvrow-${id}">${lvBtns}</div>`;
+    container.appendChild(el);
+  });
+}
+
+function setLevel(id, lvKey){
+  const qs=S.questions();
+  if(!qs[id]) return;
+  const prev=qs[id].level;
+  qs[id].level = (prev===lvKey) ? null : lvKey;
+  // Sync SRS interval to level baseline
+  qs[id].interval = lvInterval(qs[id].level);
+  S.setQuestions(qs);
+  const curLv=qs[id].level;
+  // Update badge
+  const badge=document.getElementById('lvbadge-'+id);
+  if(badge){ badge.className='lv-badge lv-badge-'+(curLv||'null'); badge.textContent=lvInfo(curLv).short; }
+  // Update buttons
+  const row=document.getElementById('lvrow-'+id);
+  if(row){ row.querySelectorAll('.lv-btn').forEach((btn,i)=>{ const l=LEVELS[i]; btn.className='lv-btn'+(curLv===l.key?' active-'+l.key:''); }); }
+  showToast(curLv?`✅ ${lvInfo(curLv).label} set`:'Level hata diya');
+}
+
+function markQ(id,result){
+  const qs=S.questions();
+  const td=S.today();
+  const sd=td[activeTodayStu]; if(!sd||!qs[id]) return;
+  const prev=sd.results[id]||null;
+  const lv=qs[id].level||null;
+  const base=lvInterval(lv);
+
+  function undo(q,r){
+    if(r==='correct'){ q.interval=Math.max(base,Math.floor((q.interval||base)/2)); q.correct=Math.max(0,(q.correct||1)-1); }
+    else{ q.interval=base; q.wrong=Math.max(0,(q.wrong||1)-1); }
+  }
+  function apply(q,r){
+    q.lastDate=ds();
+    if(r==='correct'){ q.interval=Math.min(base*32,(q.interval||base)*2); q.correct=(q.correct||0)+1; }
+    else{ q.interval=base; q.wrong=(q.wrong||0)+1; }
+  }
+  if(prev===result){ sd.results[id]=null; undo(qs[id],result); }
+  else{ if(prev) undo(qs[id],prev); sd.results[id]=result; apply(qs[id],result); }
+  S.setQuestions(qs); S.setToday(td); renderTodayList();
+}
+
+function regenerate(){
+  if(!confirm('Aaj ki list naye se banega. Purana progress jayega. OK?')) return;
+  const td=S.today(); delete td[activeTodayStu]; S.setToday(td); renderTodayList();
+}
+
+// ── ADD ───────────────────────────────────────────────────────
+function renderAdd(){
+  const students=S.students();
+  document.getElementById('addQStu').innerHTML='<option value="">— Select Student —</option>'+
+    students.map(s=>`<option value="${s.id}">${s.name} (Class ${s.cls})</option>`).join('');
+  renderBrowse();
+}
+function addStudent(){
+  const name=document.getElementById('addStuName').value.trim();
+  const cls=document.getElementById('addStuClass').value.trim();
+  if(!name||!cls){showToast('Naam aur class dono bharo');return;}
+  const students=S.students();
+  const id='stu_'+name.toLowerCase().replace(/\s+/g,'_')+'_'+cls;
+  if(students.find(s=>s.id===id)){showToast('Yeh student already hai');return;}
+  students.push({id,name,cls});
+  S.setStudents(students);
+  document.getElementById('addStuName').value='';
+  document.getElementById('addStuClass').value='';
+  showToast(`✅ ${name} add ho gaya!`);
+  renderAdd();
+}
+function setRangeMode(mode){
+  rangeMode=mode;
+  document.getElementById('optSingle').classList.toggle('active',mode==='single');
+  document.getElementById('optRange').classList.toggle('active',mode==='range');
+  document.getElementById('modeSingle').style.display=mode==='single'?'':'none';
+  document.getElementById('modeRange').style.display=mode==='range'?'':'none';
+}
+function addQuestions(){
+  const stuId=document.getElementById('addQStu').value;
+  const chapter=document.getElementById('addQChapter').value.trim();
+  const type=document.getElementById('addQType').value.trim();
+  if(!stuId||!chapter||!type){showToast('Sab fields bharo');return;}
+  let nums=[];
+  if(rangeMode==='single'){
+    nums=document.getElementById('addQNums').value.split(',').map(n=>n.trim()).filter(Boolean);
+    if(!nums.length){showToast('Q numbers likho');return;}
+  } else {
+    const from=parseInt(document.getElementById('addRangeFrom').value);
+    const to=parseInt(document.getElementById('addRangeTo').value);
+    if(isNaN(from)||isNaN(to)||from>to){showToast('Valid range do');return;}
+    for(let i=from;i<=to;i++) nums.push(String(i));
+  }
+  const qs=S.questions();
+  let added=0,skipped=0;
+  for(const num of nums){
+    const id=`${stuId}__${chapter}__${type}__${num}`;
+    if(qs[id]){skipped++;continue;}
+    qs[id]={student:stuId,chapter,type,num,interval:1,correct:0,wrong:0,lastDate:null,level:null};
+    added++;
+  }
+  S.setQuestions(qs);
+  showToast(`✅ ${added} add hue${skipped?`, ${skipped} already the`:''}`);
+  ['addQChapter','addQType','addQNums','addRangeFrom','addRangeTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderBrowse();
+}
+function renderBrowse(){
+  const qs=S.questions();
+  const all=Object.entries(qs);
+  if(!all.length){document.getElementById('browseCard').style.display='none';return;}
+  document.getElementById('browseCard').style.display='';
+  const students=S.students();
+  const stuMap=Object.fromEntries(students.map(s=>[s.id,s]));
+  const tree={};
+  for(const[id,q]of all){
+    const key=`${q.student}||${q.chapter}||${q.type}`;
+    if(!tree[key]) tree[key]={student:q.student,chapter:q.chapter,type:q.type,items:[]};
+    tree[key].items.push({id,num:q.num,level:q.level||null});
+  }
+  let html=''; let lastStu='';
+  for(const[,grp]of Object.entries(tree)){
+    const stu=stuMap[grp.student]||{name:grp.student,cls:'?'};
+    if(grp.student!==lastStu){
+      html+=`<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;padding:10px 0 4px;">${stu.name} — Class ${stu.cls}</div>`;
+      lastStu=grp.student;
+    }
+    html+=`
+      <div class="acc-item">
+        <div class="acc-header" onclick="this.parentElement.classList.toggle('open')">
+          <span>${grp.chapter} · ${grp.type} <span class="badge badge-accent">${grp.items.length}</span></span>
+          <span class="acc-arrow">▶</span>
         </div>
-      `).join('')}
+        <div class="acc-body">
+          <div class="q-grid">${grp.items.map(i=>`<span class="q-chip">${i.num} <span class="lv-badge lv-badge-${i.level||'null'}" style="font-size:9px;">${lvInfo(i.level).short}</span></span>`).join('')}</div>
+          <div style="margin-top:8px;"><button class="btn-sm btn-sm-danger" onclick="deleteGroup('${grp.student}','${grp.chapter}','${grp.type}')">🗑️ Delete Group</button></div>
+        </div>
+      </div>`;
+  }
+  document.getElementById('browseList').innerHTML=html;
+}
+function deleteGroup(stuId,chapter,type){
+  if(!confirm(`"${chapter} > ${type}" delete hoga. OK?`)) return;
+  const qs=S.questions();
+  for(const id of Object.keys(qs)){ if(qs[id].student===stuId&&qs[id].chapter===chapter&&qs[id].type===type) delete qs[id]; }
+  S.setQuestions(qs); showToast('Delete ho gaya'); renderBrowse();
+}
+
+// ── STATS ─────────────────────────────────────────────────────
+function renderStats(){
+  const students=S.students();
+  if(!students.length){document.getElementById('statsStuRow').innerHTML='';return;}
+  if(!activeStatsStu||!students.find(s=>s.id===activeStatsStu)) activeStatsStu=students[0].id;
+  document.getElementById('statsStuRow').innerHTML=students.map(s=>`
+    <div class="stu-chip ${s.id===activeStatsStu?'active':''}" onclick="selStatsStu('${s.id}')">${s.name} (${s.cls})</div>
+  `).join('');
+  const qs=S.questions();
+  const all=Object.entries(qs).filter(([,q])=>q.student===activeStatsStu);
+  const doneQs=all.filter(([,q])=>q.lastDate).length;
+  const wrongQs=all.filter(([,q])=>(q.wrong||0)>0).length;
+  const unassignedCount=all.filter(([,q])=>!q.level).length;
+  document.getElementById('sTot').textContent=all.length;
+  document.getElementById('sDone').textContent=doneQs;
+  document.getElementById('sWrong').textContent=wrongQs;
+
+  // Unassigned alert
+  const uaEl=document.getElementById('statsUnassigned');
+  if(unassignedCount>0){
+    uaEl.style.display='';
+    uaEl.innerHTML=`<div class="alert-box alert-warn">⚠️ ${unassignedCount} questions ka level assign nahi hua — Aaj tab mein assign karo</div>`;
+  } else { uaEl.style.display='none'; }
+
+  // Level distribution bars
+  const lvCounts={null:0};
+  LEVELS.forEach(l=>lvCounts[l.key]=0);
+  for(const[,q]of all) lvCounts[q.level||null]=(lvCounts[q.level||null]||0)+1;
+  const maxCount=Math.max(...Object.values(lvCounts),1);
+  const lvRows=[{key:null,label:'Unset',color:'#6e7681'},...LEVELS];
+  document.getElementById('lvDistGrid').innerHTML=lvRows.map(l=>`
+    <div class="lv-dist-row">
+      <div class="lv-dist-label" style="color:${l.color};font-size:11px;font-weight:700;">${l.label||'Unset'}</div>
+      <div class="lv-dist-bar-wrap"><div class="lv-dist-bar" style="width:${Math.round((lvCounts[l.key]||0)/maxCount*100)}%;background:${l.color}"></div></div>
+      <div class="lv-dist-count" style="color:${l.color}">${lvCounts[l.key]||0}</div>
     </div>
+  `).join('');
+
+  // Filter chips
+  document.getElementById('lvFilterRow').innerHTML=`
+    <div class="lv-fc" style="${activeStatLv==='all'?'border-color:var(--accent);color:var(--accent);background:var(--accent-dim)':''}" onclick="setLvFilter('all')">Sab</div>
+    <div class="lv-fc" style="${activeStatLv==='null'?'border-color:#6e7681;color:#6e7681;background:rgba(110,118,129,.15)':''}" onclick="setLvFilter('null')">Unset</div>
+    ${LEVELS.map(l=>`<div class="lv-fc" style="${activeStatLv===l.key?`border-color:${l.color};color:${l.color};background:rgba(0,0,0,.2)`:''}" onclick="setLvFilter('${l.key}')">${l.label}</div>`).join('')}
   `;
-  
-  document.getElementById('paperOutput').style.display = 'block';
+  renderChapters();
 }
+function selStatsStu(id){ activeStatsStu=id; renderStats(); }
+function setLvFilter(lv){ activeStatLv=lv; renderChapters(); renderStats(); }
 
-function toggleSec(bi) {
-  document.getElementById(`gsec-${bi}`).classList.toggle('open');
-  document.getElementById(`gchev-${bi}`).classList.toggle('open');
-}
-
-// ══════════════════════════════════════════════════════════
-// DOWNLOAD FUNCTIONS
-// ══════════════════════════════════════════════════════════
-async function downloadImages() {
-  if (!currentPaper) return;
-  showOverlay('Downloading images...');
-  
-  let done = 0;
-  const allItems = currentPaper.blocks.flatMap(b => b.items);
-  
-  for (const item of allItems) {
-    updateOverlay(`${done+1}/${allItems.length}`, (done/allItems.length)*100);
-    try {
-      const res = await fetch(item.url);
-      if (res.ok) {
-        const blob = await res.blob();
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = item.filename;
-        a.click();
-        await new Promise(r => setTimeout(r, 400));
-      }
-    } catch {}
-    done++;
+function renderChapters(){
+  const qs=S.questions();
+  const all=Object.entries(qs).filter(([,q])=>q.student===activeStatsStu);
+  const search=(document.getElementById('chSearch')||{}).value?.toLowerCase()||'';
+  const filtered=activeStatLv==='all'?all:all.filter(([,q])=>(q.level||null)===(activeStatLv==='null'?null:activeStatLv));
+  const chapters={};
+  for(const[id,q]of filtered){
+    if(search&&!q.chapter.toLowerCase().includes(search)) continue;
+    const key=`${q.chapter}||${q.type}`;
+    if(!chapters[key]) chapters[key]={chapter:q.chapter,type:q.type,items:[]};
+    chapters[key].items.push([id,q]);
   }
-  
-  hideOverlay();
-  showToast(`✓ ${done} images downloaded!`, 's');
+  let html='';
+  for(const[,grp]of Object.entries(chapters)){
+    const tot=grp.items.length;
+    const doneC=grp.items.filter(([,q])=>q.lastDate).length;
+    const wrongC=grp.items.filter(([,q])=>(q.wrong||0)>0).length;
+    const pct=tot?Math.round(doneC/tot*100):0;
+    html+=`
+      <div class="acc-item">
+        <div class="acc-header" onclick="this.parentElement.classList.toggle('open')">
+          <span style="flex:1;min-width:0;">${grp.chapter} · ${grp.type} <span class="badge badge-accent">${tot}</span></span>
+          <span style="font-size:12px;font-weight:700;color:var(--green);flex-shrink:0;">${pct}%</span>
+          <span class="acc-arrow">▶</span>
+        </div>
+        <div class="acc-body">
+          <div class="ch-prog-wrap"><div class="ch-prog-bar" style="width:${pct}%"></div></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+            <span class="badge badge-green">✓ ${doneC} done</span>
+            ${wrongC?`<span class="badge" style="background:rgba(248,81,73,.12);color:var(--red)">✗ ${wrongC} galat</span>`:''}
+          </div>
+          <div class="q-grid">
+            ${grp.items.map(([,q])=>`
+              <span class="q-chip">Q${q.num}
+                <span class="lv-badge lv-badge-${q.level||'null'}" style="font-size:9px;">${lvInfo(q.level||null).short}</span>
+                ${(q.wrong||0)>0?`<span style="color:var(--red);font-size:10px;">(${q.wrong}✗)</span>`:''}
+              </span>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  }
+  document.getElementById('chapterAcc').innerHTML=html||'<div style="padding:10px 0;font-size:13px;color:var(--text-muted)">Koi data nahi</div>';
 }
 
-async function downloadZip() {
-  if (!currentPaper) return;
-  await loadJSZip();
-  
-  const zip = new JSZip();
-  const allItems = currentPaper.blocks.flatMap(b => b.items);
-  
-  showOverlay('Creating ZIP...');
-  let done = 0;
-  
-  for (const item of allItems) {
-    updateOverlay(item.filename, (done/allItems.length)*90);
-    try {
-      const res = await fetch(item.url);
-      if (res.ok) zip.file(item.filename, await res.blob());
-    } catch {}
-    done++;
+// ── SETTINGS ──────────────────────────────────────────────────
+function renderSettings(){
+  const s=S.settings();
+  document.getElementById('setCount').value=s.dailyCount;
+  const mix=s.mix||{};
+  document.getElementById('mixGrid').innerHTML=LEVELS.map(l=>`
+    <div class="mix-item">
+      <div class="mix-label" style="color:${l.color}">${l.label}</div>
+      <input class="mix-input" type="number" id="mix-${l.key}" value="${mix[l.key]||0}" min="0" placeholder="0" />
+    </div>
+  `).join('');
+  const students=S.students();
+  document.getElementById('stuList').innerHTML=students.length
+    ?students.map(s=>`
+        <div class="stu-item">
+          <div><div class="stu-name">${s.name}</div><div class="stu-meta">Class ${s.cls}</div></div>
+          <button class="btn-sm btn-sm-danger" onclick="deleteStu('${s.id}')">Delete</button>
+        </div>`).join('')
+    :'<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">Koi student nahi</div>';
+}
+function saveSettings(){
+  const mix={};
+  LEVELS.forEach(l=>{ mix[l.key]=parseInt(document.getElementById('mix-'+l.key).value)||0; });
+  S.setSettings({dailyCount:parseInt(document.getElementById('setCount').value)||20, mix});
+  showToast('✅ Save ho gaya!');
+}
+function deleteStu(id){
+  if(!confirm('Student aur saare questions delete honge. Sure?')) return;
+  S.setStudents(S.students().filter(s=>s.id!==id));
+  const qs=S.questions();
+  for(const qid of Object.keys(qs)){ if(qs[qid].student===id) delete qs[qid]; }
+  S.setQuestions(qs); showToast('Delete ho gaya'); renderSettings();
+}
+function resetProgress(){
+  if(!confirm('Saara progress reset hoga. Questions + levels rahenge. OK?')) return;
+  const qs=S.questions();
+  for(const id of Object.keys(qs)){
+    const base=lvInterval(qs[id].level||null);
+    Object.assign(qs[id],{interval:base,correct:0,wrong:0,lastDate:null});
   }
-  
-  updateOverlay('Compressing...', 95);
-  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `QBank_Test_${Date.now()}.zip`;
+  S.setQuestions(qs); localStorage.removeItem('qb_today'); showToast('Progress reset ho gaya');
+}
+function resetAll(){
+  if(!confirm('SABKUCH DELETE — students, questions, progress. Bilkul sure?')) return;
+  ['qb_s','qb_q','qb_cfg','qb_today','qb_streak'].forEach(k=>localStorage.removeItem(k));
+  activeTodayStu=null; activeStatsStu=null;
+  showToast('Sab reset ho gaya'); renderSettings(); renderToday();
+}
+
+// ── BACKUP ────────────────────────────────────────────────────
+function exportData(){
+  const data={
+    students:S.students(),
+    questions:S.questions(),
+    settings:S.settings(),
+    streak:S.streak(),
+    exported:new Date().toISOString(),
+    version:2
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`qbank-backup-${ds()}.json`;
   a.click();
-  
-  hideOverlay();
-  showToast(`✅ ZIP ready! (${done} images)`, 's');
+  URL.revokeObjectURL(url);
+  showToast('✅ Export ho gaya!');
+}
+function importData(event){
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.students||!data.questions) throw new Error('Invalid format');
+      if(!confirm(`Import karoge? Isme ${Object.keys(data.questions).length} questions hain. Purana data replace ho jayega.`)) return;
+      S.setStudents(data.students);
+      S.setQuestions(data.questions);
+      if(data.settings) S.setSettings(data.settings);
+      if(data.streak) S.setStreak(data.streak);
+      localStorage.removeItem('qb_today');
+      showToast('✅ Import ho gaya!');
+      renderToday();
+    }catch(err){
+      showToast('❌ Invalid file: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value='';
 }
 
-async function downloadPDF() {
-  if (!currentPaper) return;
-  await loadJsPDF();
-  
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const pageW = 210, pageH = 297;
-  const margin = 10;
-  
-  showOverlay('Creating PDF...');
-  
-  const allItems = currentPaper.blocks.flatMap(b => b.items);
-  let done = 0, firstPage = true;
-  
-  for (const item of allItems) {
-    updateOverlay(`${done+1}/${allItems.length}`, (done/allItems.length)*95);
-    
-    try {
-      const res = await fetch(item.url);
-      if (!res.ok) continue;
-      const blob = await res.blob();
-      const imgData = await new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-      });
-      
-      if (!firstPage) pdf.addPage();
-      firstPage = false;
-      
-      // Header
-      pdf.setFillColor(17, 19, 24);
-      pdf.rect(0, 0, pageW, 12, 'F');
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(8);
-      pdf.setTextColor(34, 197, 94);
-      pdf.text(`Q${done+1} | ${item.chapter}`, margin, 8);
-      pdf.setTextColor(90, 96, 112);
-      pdf.text(currentPaper.date, pageW - margin, 8, { align: 'right' });
-      
-      // Image
-      const imgType = imgData.includes('data:image/png') ? 'PNG' : 'JPEG';
-      pdf.addImage(imgData, imgType, margin, 15, pageW - margin*2, pageH - 25, undefined, 'FAST');
-      
-    } catch {}
-    done++;
-  }
-  
-  updateOverlay('Saving PDF...', 98);
-  pdf.save(`QBank_Test_${Date.now()}.pdf`);
-  
-  hideOverlay();
-  showToast(`✅ PDF ready! (${done} pages)`, 's');
+// ── TOAST ─────────────────────────────────────────────────────
+let toastT;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-async function markPaperDone() {
-  if (!currentPaper) return;
-  
-  // Mark all items as used
-  currentPaper.blocks.forEach(blk => {
-    blk.items.forEach(item => {
-      const q = (data.questions[item.chapter] || []).find(q => q.id === item.id);
-      if (q) q.used = true;
-    });
+// ── SERVICE WORKER ────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
   });
-  
-  // Save to history
-  data.history = data.history || [];
-  data.history.unshift({
-    date: currentPaper.date,
-    totalQ: currentPaper.totalQ,
-    chapters: currentPaper.blocks.map(b => ({ chapter: b.chapter, count: b.count }))
-  });
-  
-  saveLocalData();
-  await saveToGithub();
-  
-  currentPaper = null;
-  document.getElementById('paperOutput').style.display = 'none';
-  document.getElementById('nb-paper').classList.remove('show');
-  renderHome();
-  showToast('✓ Paper marked done!', 's');
 }
 
-// ══════════════════════════════════════════════════════════
-// MODAL
-// ══════════════════════════════════════════════════════════
-function openModal(mode) {
-  modalMode = mode;
-  const m = document.getElementById('modal');
-  const title = document.getElementById('mTitle');
-  const hint = document.getElementById('mHint');
-  const body = document.getElementById('mBody');
-  
-  if (mode === 'addChapter') {
-    title.textContent = 'Add Chapter';
-    hint.textContent = 'Naya chapter banao (e.g. Fractions, Geometry)';
-    body.innerHTML = '<input class="modal-inp" id="modalInput" placeholder="Chapter name">';
-  }
-  
-  m.classList.add('open');
-  setTimeout(() => document.getElementById('modalInput')?.focus(), 100);
-}
-
-function closeModal() {
-  document.getElementById('modal').classList.remove('open');
-  modalMode = null;
-}
-
-function confirmModal() {
-  if (modalMode === 'addChapter') {
-    const name = document.getElementById('modalInput').value.trim();
-    if (!name) { showToast('Name likho!', 'e'); return; }
-    if (data.chapters.includes(name)) { showToast('Chapter already exists!', 'e'); return; }
-    data.chapters.push(name);
-    data.questions[name] = [];
-    saveLocalData();
-    saveToGithub();
-    showToast(`✓ "${name}" added!`, 's');
-    renderHome();
-    updateChapterDropdown();
-  }
-  closeModal();
-}
-
-// ══════════════════════════════════════════════════════════
-// UTILITIES
-// ══════════════════════════════════════════════════════════
-function exportData() {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `qbank_export_${Date.now()}.json`;
-  a.click();
-  showToast('Data exported!', 's');
-}
-
-function esc(s) { return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function showOverlay(text, pct = 0) {
-  document.getElementById('dl-text').textContent = text;
-  document.getElementById('dl-fill').style.width = pct + '%';
-  document.getElementById('dl-overlay').classList.add('open');
-}
-function updateOverlay(text, pct) {
-  document.getElementById('dl-text').textContent = text;
-  document.getElementById('dl-fill').style.width = pct + '%';
-}
-function hideOverlay() {
-  document.getElementById('dl-overlay').classList.remove('open');
-}
-
-function showToast(msg, type = 's') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + type;
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// PWA
-let dp;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault(); dp = e;
-  const btn = document.createElement('div');
-  btn.className = 'ni';
-  btn.innerHTML = '<div class="ni-icon">📲</div><div class="ni-lbl">Install</div>';
-  btn.onclick = async () => { if (!dp) return; dp.prompt(); const { outcome } = await dp.userChoice; if (outcome === 'accepted') btn.remove(); dp = null; };
-  document.getElementById('bnav').appendChild(btn);
-});
-if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
-  if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) confirmModal();
-});
+// ── INIT ──────────────────────────────────────────────────────
+document.getElementById('headerDate').textContent=new Date().toLocaleDateString('hi-IN',{weekday:'short',day:'numeric',month:'short'});
+renderStreak();
+renderToday();
 </script>
 </body>
 </html>
