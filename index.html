@@ -436,6 +436,17 @@
   </div>
 </div>
 
+<!-- RENAME MODAL -->
+<div class="modal-overlay" id="renameModal" style="display:none" onclick="if(event.target===this)closeRenameModal()">
+  <div class="modal">
+    <div class="modal-title" id="renameModalTitle">Rename <button class="modal-close" onclick="closeRenameModal()">✕</button></div>
+    <div class="field"><div class="field-label" id="renameFieldLabel">New Name</div>
+      <input class="field-input" id="renameInput" placeholder="" />
+    </div>
+    <button class="btn btn-primary" onclick="saveRename()">💾 Save</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -972,7 +983,11 @@ function renderBrowse(){
             <button class="btn-sm" style="border-color:var(--accent);color:var(--accent);flex-shrink:0;" onclick="quickAdd('${grp.student}','${grp.book||''}','${grp.chapter}','${grp.items[0]?.id}')">Add</button>
           </div>
         </div>
-        <button class="btn-sm" onclick="resetChapter('${grp.student}','${grp.book||''}','${grp.chapter}')">🔄 Reset Pointer to Start</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn-sm" onclick="openRenameChapter('${grp.student}','${grp.book||''}','${grp.chapter}')">✏️ Rename Chapter</button>
+          ${grp.book?`<button class="btn-sm" onclick="openRenameBook('${grp.student}','${grp.book}')">📚 Rename Book</button>`:''}
+          <button class="btn-sm" onclick="resetChapter('${grp.student}','${grp.book||''}','${grp.chapter}')">🔄 Reset Pointer</button>
+        </div>
       </div>
     </div>`;
   }
@@ -1378,6 +1393,110 @@ function importData(event){
     }catch(err){showToast('❌ '+err.message);}
   };
   reader.readAsText(file);event.target.value='';
+}
+
+// ── RENAME ───────────────────────────────────────────────────────
+let renameCtx=null; // {type:'chapter'|'book', stuId, bookId, oldName}
+
+function openRenameStu(stuId){
+  const stu=S.students().find(s=>s.id===stuId);
+  if(!stu) return;
+  renameCtx={type:'student',stuId};
+  document.getElementById('renameModalTitle').innerHTML='Edit Student <button class="modal-close" onclick="closeRenameModal()">✕</button>';
+  document.getElementById('renameFieldLabel').textContent='Name · Class (e.g. Janvi · 8)';
+  document.getElementById('renameInput').value=`${stu.name} · ${stu.cls}`;
+  document.getElementById('renameModal').style.display='flex';
+}
+function openRenameChapter(stuId,bookId,chapter){
+  renameCtx={type:'chapter',stuId,bookId,chapter};
+  document.getElementById('renameModalTitle').innerHTML='Rename Chapter <button class="modal-close" onclick="closeRenameModal()">✕</button>';
+  document.getElementById('renameFieldLabel').textContent='New Chapter Name';
+  document.getElementById('renameInput').value=chapter;
+  document.getElementById('renameModal').style.display='flex';
+}
+function openRenameBook(stuId,bookId){
+  const name=BS.getName(stuId,bookId);
+  renameCtx={type:'book',stuId,bookId,oldName:name};
+  document.getElementById('renameModalTitle').innerHTML='Rename Book <button class="modal-close" onclick="closeRenameModal()">✕</button>';
+  document.getElementById('renameFieldLabel').textContent='New Book Name';
+  document.getElementById('renameInput').value=name;
+  document.getElementById('renameModal').style.display='flex';
+}
+function closeRenameModal(){
+  document.getElementById('renameModal').style.display='none';
+  renameCtx=null;
+}
+function saveRename(){
+  if(!renameCtx) return;
+  const newVal=document.getElementById('renameInput').value.trim();
+  if(!newVal){showToast('Enter a name');return;}
+
+  if(renameCtx.type==='student'){
+    const parts=newVal.split('·').map(p=>p.trim());
+    const name=parts[0]||newVal;
+    const cls=parts[1]||'';
+    const students=S.students();
+    const idx=students.findIndex(s=>s.id===renameCtx.stuId);
+    if(idx>=0){students[idx].name=name;if(cls)students[idx].cls=cls;}
+    S.setStudents(students);
+    showToast('✅ Student updated');
+    closeRenameModal();renderSettings();renderHome();return;
+  }
+  if(renameCtx.type==='chapter'){
+    const{stuId,bookId,chapter}=renameCtx;
+    if(newVal===chapter){closeRenameModal();return;}
+    const qs=S.questions();
+    // Update all questions in this chapter
+    Object.keys(qs).forEach(id=>{
+      const q=qs[id];
+      if(q.student===stuId&&(q.book||'')===bookId&&q.chapter===chapter){
+        q.chapter=newVal;
+        // Update id
+        const newId=`${q.student}__${q.book||''}__${newVal}__${q.type}__${q.num}`;
+        if(newId!==id){ qs[newId]={...q}; delete qs[id]; }
+        else qs[id]=q;
+      }
+    });
+    S.setQuestions(qs);
+    // Update pointer key
+    const ptr=S.pointer();
+    if(ptr[stuId]){
+      const oldKey=`${stuId}||${bookId}||${chapter}`;
+      const newKey=`${stuId}||${bookId}||${newVal}`;
+      if(ptr[stuId][oldKey]!==undefined){
+        ptr[stuId][newKey]=ptr[stuId][oldKey];
+        delete ptr[stuId][oldKey];
+      }
+      S.setPointer(ptr);
+    }
+    // Update config key
+    const cfg=S.config();
+    if(cfg[stuId]){
+      const oldKey=`${stuId}||${bookId}||${chapter}`;
+      const newKey=`${stuId}||${bookId}||${newVal}`;
+      if(cfg[stuId][oldKey]!==undefined){
+        cfg[stuId][newKey]=cfg[stuId][oldKey];
+        delete cfg[stuId][oldKey];
+      }
+      S.setConfig(cfg);
+    }
+    regenerateSchedule(stuId);
+    showToast('✅ Chapter renamed');
+
+  } else if(renameCtx.type==='book'){
+    const{stuId,bookId}=renameCtx;
+    const books=BS.all();
+    if(books[stuId]){
+      const bk=books[stuId].find(b=>b.id===bookId);
+      if(bk) bk.name=newVal;
+      BS.set(books);
+    }
+    showToast('✅ Book renamed');
+  }
+
+  closeRenameModal();
+  renderBrowse();
+  renderHome();
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────
