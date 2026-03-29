@@ -111,6 +111,19 @@
     .section-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;}
     .section-item-name{font-size:13px;font-weight:600;}
     .section-item-meta{font-size:11px;color:var(--text-muted);margin-top:1px;}
+    /* MODE SELECTOR */
+    .mode-option{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;}
+    .mode-option.active{border-color:var(--accent);background:var(--accent-dim);}
+    .mode-option-radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;margin-top:2px;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+    .mode-option.active .mode-option-radio{border-color:var(--accent);}
+    .mode-option.active .mode-option-radio::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent);display:block;}
+    .mode-option-title{font-size:13px;font-weight:700;margin-bottom:2px;}
+    .mode-option-desc{font-size:11px;color:var(--text-muted);}
+    .chapter-check-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;}
+    .chapter-check-row.selected{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+    .ch-check-box{width:16px;height:16px;border-radius:4px;border:2px solid var(--border);flex-shrink:0;transition:all .15s;display:flex;align-items:center;justify-content:center;font-size:10px;}
+    .chapter-check-row.selected .ch-check-box{border-color:var(--accent);background:var(--accent);color:#000;}
+
     /* DRAG REORDER */
     .drag-item{touch-action:none;transition:opacity .15s;}
     .drag-item.dragging{opacity:.4;}
@@ -357,12 +370,37 @@
   <div class="tab-panel" id="panel-settings">
 
     <div class="card">
-      <div class="card-title">⚙️ Per-Chapter Daily Questions</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Set how many questions per chapter per day for each student.</div>
+      <div class="card-title">⚙️ Revision Settings</div>
       <div class="field"><div class="field-label">Student</div>
         <select class="field-select" id="cfgStu" onchange="renderChapterConfig()"><option value="">— Select Student —</option></select>
       </div>
-      <div id="chapterConfig"></div>
+
+      <div class="field">
+        <div class="field-label">Mode</div>
+        <div id="modeSelector" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+      <!-- Custom chapter picker -->
+      <div id="customChapterPicker" style="display:none">
+        <div class="field-label" style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">Select Chapters</div>
+        <div id="customChapterList" style="display:flex;flex-direction:column;gap:5px;"></div>
+      </div>
+
+      <!-- Exam Only settings -->
+      <div id="examOnlySettings" style="display:none">
+        <div class="field" style="margin-top:10px;">
+          <div class="field-label">Exam Date</div>
+          <input class="field-input" type="date" id="examDateInput" onchange="onExamDateChange()" />
+        </div>
+        <div id="examDateInfo" style="font-size:12px;color:var(--text-muted);margin-bottom:10px;"></div>
+        <div class="field-label" style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">Chapters in Exam</div>
+        <div id="examChapterList" style="display:flex;flex-direction:column;gap:5px;"></div>
+      </div>
+
+      <div id="perChapterSection">
+        <div style="font-size:12px;color:var(--text-muted);margin:12px 0 8px;">Questions per chapter per day:</div>
+        <div id="chapterConfig"></div>
+      </div>
     </div>
 
     <div class="card">
@@ -543,31 +581,72 @@ function getStuChapters(stuId){
 function generateNextDay(stuId){
   const cfg=S.config()[stuId]||{};
   const ptr=S.pointer()[stuId]||{};
-  const chapters=getStuChapters(stuId);
+  const qs=S.questions();
+  const mode=getStuMode(stuId);
+  const examChapters=getStuExamChapters(stuId);
+  const customChapters=getStuCustomChapters(stuId);
   const dayChapters={};
 
+  let chapters=getStuChapters(stuId);
+  // Filter chapters by mode
+  if(mode==='custom') chapters=chapters.filter(k=>customChapters.includes(k));
+  if(mode==='exam_only' && examChapters.length) chapters=chapters.filter(k=>examChapters.includes(k));
+
   for(const chKey of chapters){
-    const qIds=getChapterQIds(stuId,chKey);
-    if(!qIds.length) continue;
+    const allQIds=getChapterQIds(stuId,chKey);
+    if(!allQIds.length) continue;
     const qPerDay=cfg[chKey]?.qPerDay||5;
-    const start=(ptr[chKey]||0)%qIds.length;
     const selected=[];
-    for(let i=0;i<qPerDay;i++){
-      selected.push(qIds[(start+i)%qIds.length]);
+
+    if(mode==='exam_only'){
+      // Only leveled (SRS) questions — due first, then rest
+      const srsAll=allQIds.filter(id=>qs[id]&&isSRSQuestion(qs[id]));
+      const srsDue=srsAll.filter(id=>isSRSDue(qs[id]));
+      const srsNotDue=srsAll.filter(id=>!isSRSDue(qs[id]));
+      const pool=[...srsDue,...srsNotDue];
+      for(let i=0;i<Math.min(qPerDay,pool.length);i++) selected.push(pool[i]);
+
+    } else if(mode==='regular_all'){
+      // Pure rotation — all questions, no SRS logic
+      const pool=allQIds.filter(id=>qs[id]);
+      const start=(ptr[chKey]||0)%Math.max(pool.length,1);
+      for(let i=0;i<qPerDay;i++) selected.push(pool[(start+i)%pool.length]);
+
+    } else {
+      // regular_level or custom: SRS due first, then rotation (non-leveled or Zero)
+      const skipIds=new Set(allQIds.filter(id=>qs[id]&&qs[id].level&&lvInfo(qs[id].level)?.skip));
+      const srsIds=allQIds.filter(id=>qs[id]&&isSRSQuestion(qs[id])&&!skipIds.has(id));
+      const rotPool=allQIds.filter(id=>!skipIds.has(id)&&!isSRSQuestion(qs[id]));
+      const srsDue=srsIds.filter(id=>isSRSDue(qs[id]));
+      for(const id of srsDue){ if(selected.length>=qPerDay) break; selected.push(id); }
+      const rem=qPerDay-selected.length;
+      if(rem>0 && rotPool.length>0){
+        const start=(ptr[chKey]||0)%rotPool.length;
+        for(let i=0;i<rem;i++) selected.push(rotPool[(start+i)%rotPool.length]);
+      }
     }
-    dayChapters[chKey]=selected;
+
+    if(selected.length) dayChapters[chKey]=selected;
   }
   return dayChapters;
 }
 
-// Advance pointer by one day for a student
+// Advance pointer
 function advancePointer(stuId, dayChapters){
   const cfg=S.config()[stuId]||{};
   const ptr={...S.pointer()[stuId]||{}};
+  const qs=S.questions();
+  const mode=getStuMode(stuId);
+
   for(const [chKey,qIds] of Object.entries(dayChapters)){
+    if(mode==='exam_only') continue; // SRS handles its own scheduling
     const allQIds=getChapterQIds(stuId,chKey);
-    const qPerDay=cfg[chKey]?.qPerDay||5;
-    ptr[chKey]=((ptr[chKey]||0)+qPerDay)%Math.max(allQIds.length,1);
+    const skipIds=new Set(allQIds.filter(id=>qs[id]&&qs[id].level&&lvInfo(qs[id].level)?.skip));
+    const rotPool=mode==='regular_all'
+      ? allQIds.filter(id=>qs[id])
+      : allQIds.filter(id=>!skipIds.has(id)&&!isSRSQuestion(qs[id]));
+    const rotInDay=qIds.filter(id=>mode==='regular_all'||(!isSRSQuestion(qs[id]))).length;
+    if(rotPool.length>0) ptr[chKey]=((ptr[chKey]||0)+rotInDay)%rotPool.length;
   }
   const allPtr=S.pointer(); allPtr[stuId]=ptr; S.setPointer(allPtr);
 }
@@ -743,6 +822,8 @@ function saveDay(){
   setStuSchedule(activeHomeStu,schedule);
   // Advance pointer
   advancePointer(activeHomeStu,schedule[activeHomeDay].chapters);
+  // Update SRS for leveled questions
+  updateSRSOnSave(activeHomeStu,schedule[activeHomeDay].chapters);
   // Add next day to queue if not already there
   addNextDay(false);
   showToast('✅ Revision saved!');
@@ -1272,12 +1353,99 @@ function renderSettings(){
   if(gc.token) ghSetStatus('Config ready ✅');
 }
 
+// Modes: 'regular_all' | 'regular_level' | 'exam_only' | 'custom'
+const MODES=[
+  {key:'regular_all',  title:'Regular — All', desc:'All chapters, simple rotation. No SRS.'},
+  {key:'regular_level',title:'Regular + Level', desc:'Rotation for all + SRS for leveled questions.'},
+  {key:'exam_only',    title:'Exam Only', desc:'Only leveled questions (SRS). Rotation skipped.'},
+  {key:'custom',       title:'Custom', desc:'Choose specific chapters only.'},
+];
+
+function getStuMode(stuId){ return S.config()[stuId]?.mode||'regular_level'; }
+function getStuCustomChapters(stuId){ return S.config()[stuId]?.customChapters||[]; }
+function getStuExamChapters(stuId){ return S.config()[stuId]?.examChapters||[]; }
+
 function renderChapterConfig(){
   const stuId=document.getElementById('cfgStu').value;
-  if(!stuId){document.getElementById('chapterConfig').innerHTML='';return;}
+  if(!stuId){
+    document.getElementById('chapterConfig').innerHTML='';
+    document.getElementById('modeSelector').innerHTML='';
+    document.getElementById('customChapterPicker').style.display='none';
+    return;
+  }
   const chapters=getStuChapters(stuId);
   const cfg=S.config()[stuId]||{};
   const qs=S.questions();
+  const curMode=getStuMode(stuId);
+  const curCustom=getStuCustomChapters(stuId);
+
+  // Render mode selector
+  document.getElementById('modeSelector').innerHTML=MODES.map(m=>`
+    <div class="mode-option ${curMode===m.key?'active':''}" onclick="selectMode('${stuId}','${m.key}')">
+      <div class="mode-option-radio"></div>
+      <div>
+        <div class="mode-option-title">${m.title}</div>
+        <div class="mode-option-desc">${m.desc}</div>
+      </div>
+    </div>`).join('');
+
+  // Custom chapter picker
+  if(curMode==='custom'){
+    document.getElementById('customChapterPicker').style.display='';
+    document.getElementById('customChapterList').innerHTML=chapters.map(chKey=>{
+      const sampleQ=Object.values(qs).find(q=>q.student===stuId&&chapterKey(q)===chKey);
+      const bookName=sampleQ?.book?BS.getName(stuId,sampleQ.book):'';
+      const chName=sampleQ?.chapter||chKey;
+      const isSelected=curCustom.includes(chKey);
+      return `<div class="chapter-check-row ${isSelected?'selected':''}" onclick="toggleCustomChapter('${stuId}','${chKey}')">
+        <div class="ch-check-box">${isSelected?'✓':''}</div>
+        <span>${bookName?`<span style="color:var(--blue);font-size:11px;">${bookName} · </span>`:''}${chName}</span>
+      </div>`;
+    }).join('');
+  } else {
+    document.getElementById('customChapterPicker').style.display='none';
+  }
+
+  // Exam Only settings
+  if(curMode==='exam_only'){
+    document.getElementById('examOnlySettings').style.display='';
+    document.getElementById('perChapterSection').style.display='none';
+    const examDate=cfg.examDate||'';
+    const examChs=cfg.examChapters||[];
+    document.getElementById('examDateInput').value=examDate;
+    // Exam date info
+    if(examDate){
+      const daysLeft=Math.ceil((new Date(examDate)-new Date(ds()))/86400000);
+      const totalExamQs=chapters.filter(k=>examChs.includes(k))
+        .reduce((sum,k)=>sum+getChapterQIds(stuId,k).filter(id=>qs[id]&&isSRSQuestion(qs[id])).length,0);
+      const qpd=daysLeft>0?Math.ceil(totalExamQs/daysLeft):totalExamQs;
+      const info=daysLeft>0
+        ?`📅 ${daysLeft} days left · ${totalExamQs} leveled questions · ~${qpd}/day auto-set`
+        :`⚠️ Exam date passed or today!`;
+      document.getElementById('examDateInfo').textContent=info;
+      document.getElementById('examDateInfo').style.color=daysLeft<=3?'var(--red)':daysLeft<=7?'var(--accent)':'var(--green)';
+    } else {
+      document.getElementById('examDateInfo').textContent='Set exam date to auto-calculate questions per day';
+    }
+    // Exam chapter list
+    document.getElementById('examChapterList').innerHTML=chapters.map(chKey=>{
+      const sampleQ=Object.values(qs).find(q=>q.student===stuId&&chapterKey(q)===chKey);
+      const bookName=sampleQ?.book?BS.getName(stuId,sampleQ.book):'';
+      const chName=sampleQ?.chapter||chKey;
+      const isSelected=examChs.includes(chKey);
+      const leveledCount=getChapterQIds(stuId,chKey).filter(id=>qs[id]&&isSRSQuestion(qs[id])).length;
+      return `<div class="chapter-check-row ${isSelected?'selected':''}" onclick="toggleExamChapter('${stuId}','${chKey}')">
+        <div class="ch-check-box">${isSelected?'✓':''}</div>
+        <div style="flex:1;">
+          <span>${bookName?`<span style="color:var(--blue);font-size:11px;">${bookName} · </span>`:''}${chName}</span>
+          <span style="font-size:11px;color:var(--text-muted);margin-left:6px;">${leveledCount} leveled</span>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    document.getElementById('examOnlySettings').style.display='none';
+    document.getElementById('perChapterSection').style.display='';
+  }
   if(!chapters.length){
     document.getElementById('chapterConfig').innerHTML='<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No chapters added yet</div>';
     return;
@@ -1296,6 +1464,77 @@ function renderChapterConfig(){
       <input class="num-input" type="number" id="cfg-${chKey.replace(/[^a-z0-9]/gi,'_')}" value="${cur}" min="1" max="${total}" />
     </div>`;
   }).join('');
+}
+
+function onExamDateChange(){
+  const stuId=document.getElementById('cfgStu').value;
+  if(!stuId) return;
+  const examDate=document.getElementById('examDateInput').value;
+  const cfg=S.config();
+  if(!cfg[stuId])cfg[stuId]={};
+  cfg[stuId].examDate=examDate;
+  // Auto-calculate and set qPerDay for each exam chapter
+  const qs=S.questions();
+  const examChs=cfg[stuId].examChapters||[];
+  const daysLeft=Math.ceil((new Date(examDate)-new Date(ds()))/86400000);
+  if(daysLeft>0){
+    for(const chKey of examChs){
+      const leveledQs=getChapterQIds(stuId,chKey).filter(id=>qs[id]&&isSRSQuestion(qs[id])).length;
+      const qpd=Math.max(1,Math.ceil(leveledQs/daysLeft));
+      if(!cfg[stuId][chKey])cfg[stuId][chKey]={};
+      cfg[stuId][chKey].qPerDay=qpd;
+    }
+  }
+  S.setConfig(cfg);
+  regenerateSchedule(stuId);
+  renderChapterConfig();
+}
+
+function toggleExamChapter(stuId,chKey){
+  const cfg=S.config();
+  if(!cfg[stuId])cfg[stuId]={};
+  let examChs=cfg[stuId].examChapters||[];
+  if(examChs.includes(chKey)) examChs=examChs.filter(k=>k!==chKey);
+  else examChs.push(chKey);
+  cfg[stuId].examChapters=examChs;
+  // Recalculate qPerDay when chapters change
+  const examDate=cfg[stuId].examDate||'';
+  if(examDate){
+    const qs=S.questions();
+    const daysLeft=Math.ceil((new Date(examDate)-new Date(ds()))/86400000);
+    if(daysLeft>0){
+      for(const k of examChs){
+        const leveledQs=getChapterQIds(stuId,k).filter(id=>qs[id]&&isSRSQuestion(qs[id])).length;
+        const qpd=Math.max(1,Math.ceil(leveledQs/daysLeft));
+        if(!cfg[stuId][k])cfg[stuId][k]={};
+        cfg[stuId][k].qPerDay=qpd;
+      }
+    }
+  }
+  S.setConfig(cfg);
+  regenerateSchedule(stuId);
+  renderChapterConfig();
+}
+
+function selectMode(stuId,mode){
+  const cfg=S.config();
+  if(!cfg[stuId])cfg[stuId]={};
+  cfg[stuId].mode=mode;
+  S.setConfig(cfg);
+  regenerateSchedule(stuId);
+  renderChapterConfig();
+}
+
+function toggleCustomChapter(stuId,chKey){
+  const cfg=S.config();
+  if(!cfg[stuId])cfg[stuId]={};
+  let custom=cfg[stuId].customChapters||[];
+  if(custom.includes(chKey)) custom=custom.filter(k=>k!==chKey);
+  else custom.push(chKey);
+  cfg[stuId].customChapters=custom;
+  S.setConfig(cfg);
+  regenerateSchedule(stuId);
+  renderChapterConfig();
 }
 
 function saveChapterConfig(){
